@@ -1,0 +1,8 @@
+all:
+  vars:
+    ansible_connection: ssh
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+  hosts:
+    scoot:
+      ansible_host: 192.168.1.110
+      ansible_user: elgeeko

@@ -1,0 +1,32 @@
+---
+- name: scoot
+  hosts: scoot
+  gather_facts: true
+  roles:
+    # - name: Ubuntu common
+    #   role: elgeeko1-ubuntu-common-ansible
+    #   vars:
+    #     ubuntu_timezone: America/Denver
+
+    - name: Scoot
+      role: elgeeko1-scoot-ansible
+
+  tasks:
+    - name: Check internet connectivity
+      ansible.builtin.wait_for:
+        host: google.com
+        port: 80
+        timeout: 10
+
+    - name: Add local SSH identity authorized key
+      ansible.posix.authorized_key:
+        user: "{{ ansible_user }}"
+        key:  "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+      become: true
+
+    - name: Remove default user ubuntu
+      ansible.builtin.user:
+        user: ubuntu
+        state: absent
+      become: true
+      when: ansible_user != "ubuntu"
