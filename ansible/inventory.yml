@@ -4,5 +4,5 @@ all:
     ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
   hosts:
     scoot:
-      ansible_host: 192.168.1.110
+      ansible_host: 192.168.1.38
       ansible_user: elgeeko
