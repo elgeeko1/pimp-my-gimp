@@ -68,6 +68,10 @@ def pixels_seizure(pixels: neopixel.NeoPixel, count:int = 10):
             pixels.show()
             time.sleep(0.025)
 
+def pixels_home(pixels: neopixel.NeoPixel):
+    pixels.fill((0, 64, 64)) # teal
+    pixels.show()
+
 def run_web_server(pixels: neopixel.NeoPixel):
     app = Flask(__name__)
 
@@ -75,6 +79,7 @@ def run_web_server(pixels: neopixel.NeoPixel):
     def hello_world():
         pixels_seizure(pixels)
         pixels_cylon(pixels)
+        pixels_home(pixels)
         return "<p>Hello, World!</p>"
     
     app.run(host="192.168.1.38", port=80)
@@ -83,8 +88,7 @@ def main():
     pixels = pixels_init()
     try:
         pixels_display_hello(pixels)
-        pixels.fill((0, 64, 64)) # teal
-        pixels.show()
+        pixels_home(pixels)
         run_web_server(pixels)
     finally:
         pixels.fill((0,0,0))
