@@ -1,0 +1,12 @@
+[Unit]
+Description=Scoot service
+After=network.target
+
+[Service]
+User=gimp
+Group=gimp
+ExecStart=/opt/scoot/run.sh
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

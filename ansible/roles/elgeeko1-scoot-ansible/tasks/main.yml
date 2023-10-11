@@ -20,3 +20,18 @@
     name: adafruit-circuitpython-neopixel
     state: latest
   become: true
+
+- name: Copy systemd service file to server
+  ansible.builtin.copy:
+    src: scoot.service
+    dest: /etc/systemd/system
+    owner: root
+    group: root
+  become: true
+
+- name: Start systemd service
+  ansible.builtin.systemd:
+    name: scoot
+    state: started
+    enabled: true
+  become: true
