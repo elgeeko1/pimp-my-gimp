@@ -1,0 +1,22 @@
+---
+- name: pip install Raspberry pi GPIO
+  ansible.builtin.pip:
+    name:
+      - RPi.GPIO
+      - rpi-ws281x  # WS281 LEDs
+    state: latest
+  become: true
+
+- name: apt install GPIO features
+  ansible.builtin.apt:
+    name:
+      - i2c-tools
+      - libgpiod-dev
+    state: latest
+  become: true
+
+- name: pip install adafruit-circuitpython-neopixel
+  ansible.builtin.pip:
+    name: adafruit-circuitpython-neopixel
+    state: latest
+  become: true

@@ -1,0 +1,11 @@
+galaxy_info:
+  role_name: elgeeko1-scoot-ansible
+  author: elgeeko1
+  description: "Configure a Raspberry Pi for controlling a dope scooter."
+  license: MIT
+  platforms:
+    - name: Ubuntu
+      versions:
+        - all
+collections:
+  - community.general
