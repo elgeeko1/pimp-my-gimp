@@ -1,7 +1,7 @@
 import time
 import board
 import neopixel
-import numpy
+
 from flask import Flask
 
 # NeoPixel communication over GPIO 18 (pin 12)
@@ -24,7 +24,6 @@ def pixels_init() -> neopixel.NeoPixel:
 
 # display a 'hello' (initialization) pattern
 def pixels_display_hello(pixels: neopixel.NeoPixel):
-    print("<p>pixels_display_hello</p>")
     sequence = [(255,0,0), (0,255,0), (0,0,255)]
     for color in sequence:
         pixels.fill(color)
@@ -32,11 +31,8 @@ def pixels_display_hello(pixels: neopixel.NeoPixel):
         time.sleep(0.25)
     pixels.fill((0,0,0))
     pixels.show()
-    print("<p>pixels_display_hello complete</p>")
 
 def pixels_cylon(pixels: neopixel.NeoPixel, count:int = 1):
-    print("<p>pixels_display_cylon</p>")
-
     pixels.fill((0,0,0))
     pixels.show()
 
@@ -58,7 +54,6 @@ def pixels_cylon(pixels: neopixel.NeoPixel, count:int = 1):
 
     pixels.fill((0,0,0))
     pixels.show()
-    print("<p>pixels__display_cylon complete</p>")
 
 def pixels_seizure(pixels: neopixel.NeoPixel, count:int = 10):
     pixels.fill((0,0,0))
