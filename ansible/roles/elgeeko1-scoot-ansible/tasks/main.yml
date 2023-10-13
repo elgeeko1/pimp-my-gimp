@@ -35,3 +35,6 @@
     state: started
     enabled: true
   become: true
+
+# add gimp user to systemd-journal group
+# copy run.sh

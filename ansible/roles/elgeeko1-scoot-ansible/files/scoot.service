@@ -5,8 +5,13 @@ After=network.target
 [Service]
 User=gimp
 Group=gimp
+WorkingDirectory=/opt/scoot
 ExecStart=/opt/scoot/run.sh
 Restart=always
+ReloadSignal=SIGINT
+KillSignal=SIGINT
+StandardOutput=syslog+console
+StandardError=syslog+console
 
 [Install]
 WantedBy=multi-user.target
