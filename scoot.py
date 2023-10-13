@@ -1,14 +1,21 @@
+#!/usr/bin/env python
+
 import time
+import sys
+
 import board
 import neopixel
 
-from flask import Flask
+from flask import Flask, request, render_template
 
 # NeoPixel communication over GPIO 18 (pin 12)
 PIXEL_PIN = board.D18
 
 # total number of NeoPixels in the array
 PIXEL_COUNT = 163
+
+# should the program terminate (handles SIGINT, SIGHUP, SIGTERM)
+TERMINATE = False
 
 # initialize the pixels array
 #   return: pixel array
@@ -73,27 +80,41 @@ def pixels_home(pixels: neopixel.NeoPixel):
     pixels.show()
 
 def run_web_server(pixels: neopixel.NeoPixel):
+    print("Starting Flask server.")
     app = Flask(__name__)
 
     @app.route("/")
-    def hello_world():
-        pixels_seizure(pixels)
-        pixels_cylon(pixels)
+    def route_request():
+        print("executing route_request()")
+        if request.args.get("seizure"):
+            pixels_seizure(pixels)
+        if request.args.get("wave"):
+            pixels_cylon(pixels)
         pixels_home(pixels)
-        return "<p>Hello, World!</p>"
+        file = open('index.html',mode='r')
+        page = file.read()
+        file.close()
+        return page
     
-    app.run(host="192.168.1.38", port=80)
+    app.run(host="0.0.0.0", port=80)
+
 
 def main():
     pixels = pixels_init()
+    rcode = 1
     try:
+        print("Application starting")
         pixels_display_hello(pixels)
         pixels_home(pixels)
         run_web_server(pixels)
+        rcode = 0
     finally:
         pixels.fill((0,0,0))
         pixels.show()
         pixels.deinit()
+        print("Application exiting")
+    sys.exit(rcode)
+
 
 if __name__ == '__main__':
     main()
