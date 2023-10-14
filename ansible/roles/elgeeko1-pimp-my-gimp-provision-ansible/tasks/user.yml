@@ -26,20 +26,20 @@
     append: true
   become: true
 
-- name: Add local SSH identity as an authorized key
+- name: add local SSH identity as an authorized key
   ansible.posix.authorized_key:
     user: "{{ raspi_user }}"
     key:  "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
   become: true
 
-- name: Remove default user ubuntu
+- name: remove default user ubuntu
   ansible.builtin.user:
     user: ubuntu
     state: absent
   become: true
   when: ansible_user != "ubuntu"
 
-- name: Remove default user ubuntu home directory
+- name: remove default user ubuntu home directory
   ansible.builtin.file:
     path: /home/ubuntu
     state: absent

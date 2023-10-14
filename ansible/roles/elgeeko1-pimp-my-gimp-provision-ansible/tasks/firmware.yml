@@ -1,4 +1,8 @@
 ---
+- name: initialize fact boot_config_changed
+  ansible.builtin.set_fact:
+    boot_config_changed: false
+
 - name: raspberry pi enable audio
   lineinfile: 
     path: /boot/firmware/config.txt
@@ -6,6 +10,12 @@
     line: 'dtparam=audio=on'
     backrefs: yes
   become: true
+  register: config
+
+- name: set fact boot_config_changed
+  ansible.builtin.set_fact:
+    boot_config_changed: true
+  when: config.changed
 
 - name: raspberry pi enable i2c
   lineinfile: 
@@ -14,6 +24,12 @@
     line: 'dtparam=i2c_arm=on'
     backrefs: yes
   become: true
+  register: config
+
+- name: set fact boot_config_changed
+  ansible.builtin.set_fact:
+    boot_config_changed: true
+  when: config.changed
 
 - name: raspberry pi enable spi
   lineinfile: 
@@ -22,6 +38,12 @@
     line: 'dtparam=spi=on'
     backrefs: yes
   become: true
+  register: config
+
+- name: set fact boot_config_changed
+  ansible.builtin.set_fact:
+    boot_config_changed: true
+  when: config.changed
 
 - name: raspberry pi enable uart
   lineinfile: 
@@ -30,7 +52,14 @@
     line: 'enable_uart=1'
     backrefs: yes
   become: true
+  register: config
 
-# - name: query raspi-config gpio status
-#   cmd: "raspi-config nonint get_rgpio"
-#   register: raspi-
+- name: set fact boot_config_changed
+  ansible.builtin.set_fact:
+    boot_config_changed: true
+  when: config.changed
+
+- name: reboot on boot configuration change
+  ansible.builtin.reboot:
+  become: true
+  when: boot_config_changed

@@ -13,10 +13,10 @@ collections:
   - ansible.utils
   - ansible.posix
 dependencies:
-  # - src: https://github.com/elgeeko1/elgeeko1-ubuntu-common-ansible
-  #   name: elgeeko1-ubuntu-common-ansible
-  #   version: main
+  - src: https://github.com/elgeeko1/elgeeko1-ubuntu-common-ansible
+    name: elgeeko1-ubuntu-common-ansible
+    version: main
 
-  # - src: https://github.com/elgeeko1/elgeeko1-docker-ansible
-  #   name: elgeeko1-docker-ansible
-  #   version: main
+  - src: https://github.com/elgeeko1/elgeeko1-docker-ansible
+    name: elgeeko1-docker-ansible
+    version: main
