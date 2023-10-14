@@ -1,0 +1,25 @@
+---
+- name: deploy static web content to {{ gimp_path }}
+  ansible.builtin.copy:
+    src:   "{{ gimp_app_local_path }}/site/"
+    dest:  "{{ gimp_path }}"
+    local_follow: false
+
+- name: deploy application pimp-my-gimp.py to {{ gimp_path }}
+  ansible.builtin.copy:
+    src:  "{{ gimp_app_local_path }}/pimp-my-gimp.py"
+    dest: "{{ gimp_path }}"
+    mode: 0755
+  register: app
+
+- name: deploy application run script run.sh to {{ gimp_path }}
+  ansible.builtin.template:
+    src:  run.sh
+    dest: "{{ gimp_path }}"
+    mode: 0755
+  register: runscript
+
+- name: queue service reset
+  ansible.builtin.set_fact:
+    gimp_service_reset: true
+  when: app.changed or runscript.changed

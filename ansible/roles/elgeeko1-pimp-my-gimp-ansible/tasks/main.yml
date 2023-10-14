@@ -1,46 +1,22 @@
 ---
-- name: apt install python3-venv
+- name: apt update cache
   ansible.builtin.apt:
-    name: python3-venv
-    state: latest
+    update_cache: true
+    cache_valid_time: 3600 # 1 hr
+    force_apt_get: true # aptitude may not be installed
   become: true
 
-- name: pip install Raspberry pi GPIO
-  ansible.builtin.pip:
-    name:
-      - RPi.GPIO
-      - rpi-ws281x  # WS281 LEDs
-    state: latest
-  become: true
+- name: install packages
+  ansible.builtin.import_tasks: packages.yml
 
-- name: apt install GPIO features
-  ansible.builtin.apt:
-    name:
-      - i2c-tools
-      - libgpiod-dev
-    state: latest
-  become: true
+- name: configure user {{ gimp_user }}
+  ansible.builtin.import_tasks: user.yml
 
-- name: pip install adafruit-circuitpython-neopixel
-  ansible.builtin.pip:
-    name: adafruit-circuitpython-neopixel
-    state: latest
-  become: true
+- name: install application requirements
+  ansible.builtin.import_tasks: app-requirements.yml
 
-- name: Copy systemd service file to server
-  ansible.builtin.copy:
-    src: scoot.service
-    dest: /etc/systemd/system
-    owner: root
-    group: root
-  become: true
+- name: deploy application
+  ansible.builtin.import_tasks: app.yml
 
-- name: Start systemd service
-  ansible.builtin.systemd:
-    name: scoot
-    state: started
-    enabled: true
-  become: true
-
-# add gimp user to systemd-journal group
-# copy run.sh
+- name: configure systemd service
+  ansible.builtin.import_tasks: systemd-service.yml

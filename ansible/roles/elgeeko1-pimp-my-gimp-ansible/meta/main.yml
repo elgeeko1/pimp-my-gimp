@@ -11,7 +11,8 @@ collections:
   - community.docker
   - community.general
   - ansible.utils
-roles:
+  - ansible.posix
+dependencies:
   - src: https://github.com/elgeeko1/elgeeko1-ubuntu-common-ansible
     name: elgeeko1-ubuntu-common-ansible
     version: main

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Pimp my Gimp</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+body, h1,h2,h3,h4,h5,h6 {
+  font-family: "Montserrat", sans-serif;
+  text-shadow: 1px 1px 0px grey;
+}
+.w3-row-padding img {margin-bottom: 12px}
+.bgimg {
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-image: url('static/images/pin.png');
+  background-color: black;
+  min-height: 100%;
+}
+.gimp-command-button {
+  border: 3px solid black;
+}
+</style>
+<script type=text/javascript>
+  // issue an HTTP GET request to send a command to the target
+  function command(arg){
+    var command_url = window.location.protocol + "//" + window.location.host + window.location.pathname;
+    command_url = command_url.substring(0, command_url.lastIndexOf('/')) + "/";
+    command_url += "command?" + arg + "=true";
+    xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+          enable_command_buttons(true);
+        }
+    }
+    xhr.open('get', command_url, true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+    xhr.send();
+    enable_command_buttons(false);
+  }
+  function enable_command_buttons(enable = true){
+    const buttons = document.getElementsByTagName("button");
+    for (const button of buttons) {
+      if(button.classList.contains("gimp-command-button")){
+        button.disabled = !enable;
+      }
+    }
+  }
+</script>
+</head>
+<body class="bgimg">
+
+<!-- Page Content -->
+<!-- <div class="w3-main w3-padding-large"> -->
+<div class="w3-main">
+
+  <!-- Header -->
+  <header class="w3-container w3-center" style="padding:128px 16px" id="home">
+    <h1 class="w3-xxlarge"><b>Pimp my Gimp</b></h1>
+    <p class="w3-xlarge"><b><i>- Glory in Failure -</i></b></p>
+  </header>
+  <!-- End Header -->
+
+  <!-- Actions Section -->
+  <div class="w3-padding-32 w3-content" id="actions" style="text-align: center;">
+    <button class="w3-button w3-light-grey w3-section gimp-command-button" onclick="command('strobe')">
+        <i class="fa fa-seizure"></i>Strobe</a>
+    </button>
+    &nbsp;
+    <button class="w3-button w3-light-grey w3-section gimp-command-button" onclick="command('cylon')">
+      <i class="fa fa-seizure"></i>Cylon</a>
+  </button>
+  <!-- End Actions Section -->
+  </div>
+
+<!-- END PAGE CONTENT -->
+</div>
+</body>
+</html>

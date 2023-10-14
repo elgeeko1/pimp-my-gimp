@@ -1,5 +1,12 @@
 #!/usr/bin/env python
 
+#########
+# Pimp my Gimp application
+# 
+# May be run standalone or as a system service.
+# Must be run as 'sudo'
+#########
+
 import time
 import sys
 
@@ -17,6 +24,7 @@ PIXEL_COUNT = 163
 # should the program terminate (handles SIGINT, SIGHUP, SIGTERM)
 TERMINATE = False
 
+
 # initialize the pixels array
 #   return: pixel array
 def pixels_init() -> neopixel.NeoPixel:
@@ -29,7 +37,9 @@ def pixels_init() -> neopixel.NeoPixel:
     pixels.show()
     return pixels
 
+
 # display a 'hello' (initialization) pattern
+#   pixels: initialized pixel array
 def pixels_display_hello(pixels: neopixel.NeoPixel):
     sequence = [(255,0,0), (0,255,0), (0,0,255)]
     for color in sequence:
@@ -39,6 +49,9 @@ def pixels_display_hello(pixels: neopixel.NeoPixel):
     pixels.fill((0,0,0))
     pixels.show()
 
+# display a rotating 'cylon' pattern
+#   pixels: initialized pixel array
+#   count:  number of cycles
 def pixels_cylon(pixels: neopixel.NeoPixel, count:int = 1):
     pixels.fill((0,0,0))
     pixels.show()
@@ -57,15 +70,17 @@ def pixels_cylon(pixels: neopixel.NeoPixel, count:int = 1):
                     pixels[pixel] = pixels[pixel+1]
                 pixels[PIXEL_COUNT-1] = last_pixel
                 pixels.show()
-                time.sleep(0.010)
+                #time.sleep(0.005)
 
     pixels.fill((0,0,0))
     pixels.show()
 
-def pixels_seizure(pixels: neopixel.NeoPixel, count:int = 10):
+# display a colorful strobe pattern
+#   pixels: initialized pixel array
+#   count:  number of strobes
+def pixels_strobe(pixels: neopixel.NeoPixel, count:int = 10):
     pixels.fill((0,0,0))
     pixels.show()
-    # flash
     for n in range(count):
         for color in [(255,0,0),(0,255,0),(0,0,255)]:
             pixels.fill(color)
@@ -75,42 +90,50 @@ def pixels_seizure(pixels: neopixel.NeoPixel, count:int = 10):
             pixels.show()
             time.sleep(0.025)
 
-def pixels_home(pixels: neopixel.NeoPixel):
-    pixels.fill((0, 64, 64)) # teal
+
+# display a solid color
+#   pixels: initialized pixel array
+#   color:  color to display
+def pixels_solid(pixels: neopixel.NeoPixel, color: tuple = (0, 64, 64)):
+    pixels.fill(color)
     pixels.show()
 
+
+# run the web server - blocking method
+#   pixels: initialized pixel array
 def run_web_server(pixels: neopixel.NeoPixel):
     print("Starting Flask server.")
     app = Flask(__name__)
 
     @app.route("/")
-    def route_request():
-        print("executing route_request()")
-        if request.args.get("seizure"):
-            pixels_seizure(pixels)
-        if request.args.get("wave"):
-            pixels_cylon(pixels)
-        pixels_home(pixels)
-        file = open('index.html',mode='r')
-        page = file.read()
-        file.close()
-        return page
+    def index():
+        return render_template('index.html')
     
+    @app.route("/command")
+    def command():
+        if request.args.get("strobe"):
+            pixels_strobe(pixels)
+        if request.args.get("cylon"):
+            pixels_cylon(pixels)
+        pixels_solid(pixels)
+        return ""
+    
+    app.config['TEMPLATES_AUTO_RELOAD'] = True
     app.run(host="0.0.0.0", port=80)
 
 
+# application entrypoint
 def main():
     pixels = pixels_init()
     rcode = 1
     try:
         print("Application starting")
         pixels_display_hello(pixels)
-        pixels_home(pixels)
+        pixels_solid(pixels)
         run_web_server(pixels)
         rcode = 0
     finally:
-        pixels.fill((0,0,0))
-        pixels.show()
+        pixels_solid((0,0,0))
         pixels.deinit()
         print("Application exiting")
     sys.exit(rcode)

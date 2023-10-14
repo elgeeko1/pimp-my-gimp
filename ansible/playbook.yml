@@ -1,15 +1,10 @@
 ---
-- name: scoot
+- name: pimp-my-gimp
   hosts: scoot
   gather_facts: true
   roles:
-    # - name: Ubuntu common
-    #   role: elgeeko1-ubuntu-common-ansible
-    #   vars:
-    #     ubuntu_timezone: America/Denver
-
     - name: Scoot
-      role: elgeeko1-scoot-ansible
+      role: elgeeko1-pimp-my-gimp-ansible
 
   tasks:
     - name: Check internet connectivity
@@ -18,9 +13,9 @@
         port: 80
         timeout: 10
 
-    - name: Add local SSH identity authorized key
+    - name: Add local SSH identity as an authorized key
       ansible.posix.authorized_key:
-        user: "{{ ansible_user }}"
+        user: "{{ gimp_user }}"
         key:  "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
       become: true
 

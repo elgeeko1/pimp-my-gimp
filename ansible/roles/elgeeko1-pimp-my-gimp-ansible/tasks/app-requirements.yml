@@ -1,0 +1,25 @@
+---
+- name: Create application directory {{ gimp_path }}
+  ansible.builtin.file:
+    path: "{{ gimp_path }}"
+    state: directory
+    owner: "{{ gimp_user }}"
+    group: "{{ gimp_user }}"
+  become: true
+
+- name: deploy requirements file
+  ansible.builtin.copy:
+    src:  "{{ gimp_app_local_path }}/requirements.txt"
+    dest: "{{ gimp_path }}/requirements.txt"
+
+- name: configure python virtual environment
+  ansible.builtin.pip:
+    requirements: "{{ gimp_path }}/requirements.txt"
+    virtualenv:   "{{ gimp_path }}/venv"
+    virtualenv_python:  python3
+    virtualenv_command: virtualenv
+  environment:
+    # if venv doesn't yet exist, pip is not available in it
+    # use stdlib distutils to install the requirements
+    # after which pip should be available
+    SETUPTOOLS_USE_DISTUTILS: stdlib

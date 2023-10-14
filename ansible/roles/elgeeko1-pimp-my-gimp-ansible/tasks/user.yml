@@ -1,0 +1,27 @@
+---
+- name: add user {{ gimp_user }} to password-less sudousers
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers
+    state: present
+    line: "{{ gimp_user }} ALL=(ALL) NOPASSWD: ALL"
+  become: true
+
+- name: add user {{ gimp_user }} to group systemd-journal
+  ansible.builtin.user:
+    name: "{{ gimp_user }}"
+    groups: systemd-journal
+    append: true
+  become: true
+
+- name: add user {{ gimp_user }} to IO groups
+  ansible.builtin.user:
+    name: "{{ gimp_user }}"
+    groups:
+      - dialout
+      - tty
+      - bluetooth
+      - kmem
+      - i2c
+      - kvm # /dev/udmabuf
+    append: true
+  become: true

@@ -1,0 +1,22 @@
+---
+- name: apt install python3-venv
+  ansible.builtin.apt:
+    name: python3-venv
+    state: latest
+  become: true
+
+# - name: apt install IO libraries
+#   ansible.builtin.apt:
+#     name:
+#       - i2c-tools
+#       - libgpiod-dev
+#     state: latest
+#   become: true
+
+- name: apt install Raspberry Pi tools
+  ansible.builtin.apt:
+    pkg:
+      - raspi-config
+      - rpi.gio-common
+    state: latest
+  become: true

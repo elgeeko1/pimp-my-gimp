@@ -1,0 +1,22 @@
+---
+- name: Deploy systemd service file pimp-my-gimp.service
+  ansible.builtin.template:
+    src: pimp-my-gimp.service
+    dest: /etc/systemd/system
+    owner: root
+    group: root
+  become: true
+  register: service_config
+
+- name: queue service reset
+  ansible.builtin.set_fact:
+    gimp_service_reset: true
+  when: service_config.changed
+
+- name: Start systemd service pimp-my-gimp
+  ansible.builtin.systemd:
+    name: pimp-my-gimp.service
+    state: "{{ gimp_service_reset | ternary('restarted', 'started') }}"
+    daemon_reload: "{{ service_config.changed }}"
+    enabled: true
+  become: true
