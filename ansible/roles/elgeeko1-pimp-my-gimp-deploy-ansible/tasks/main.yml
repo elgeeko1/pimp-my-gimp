@@ -6,10 +6,7 @@
     force_apt_get: true # aptitude may not be installed
   become: true
 
-- name: install packages
-  ansible.builtin.import_tasks: packages.yml
-
-- name: configure user {{ gimp_user }}
+- name: configure user {{ piuser }}
   ansible.builtin.import_tasks: user.yml
 
 - name: install application requirements

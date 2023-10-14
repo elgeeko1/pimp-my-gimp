@@ -1,0 +1,13 @@
+---
+- name: apt update cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600 # 1 hr
+    force_apt_get: true # aptitude may not be installed
+  become: true
+
+- name: install packages
+  ansible.builtin.import_tasks: packages.yml
+
+- name: configure user {{ piuser }}
+  ansible.builtin.import_tasks: user.yml

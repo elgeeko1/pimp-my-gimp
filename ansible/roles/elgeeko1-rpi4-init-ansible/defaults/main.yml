@@ -1,0 +1,8 @@
+# username to create for subsequent SSH access
+piuser: piuser
+
+# host address for the rpi target
+pihost: 192.168.1.38
+
+# hostname for the rpi target
+pihost_hostname: rpi

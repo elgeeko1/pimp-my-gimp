@@ -1,0 +1,6 @@
+---
+- name: configure user {{ piuser }}
+  ansible.builtin.import_tasks: user.yml
+
+- name: hostname {{ pihost_hostname }}
+  ansible.builtin.import_tasks: hostname.yml

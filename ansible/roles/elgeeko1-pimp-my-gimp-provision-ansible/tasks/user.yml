@@ -1,0 +1,47 @@
+---
+- name: add user {{ piuser }} to password-less sudousers
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers
+    state: present
+    line: "{{ piuser }} ALL=(ALL) NOPASSWD: ALL"
+  become: true
+
+- name: add user {{ piuser }} to group systemd-journal
+  ansible.builtin.user:
+    name: "{{ piuser }}"
+    groups: systemd-journal
+    append: true
+  become: true
+
+- name: add user {{ piuser }} to IO groups
+  ansible.builtin.user:
+    name: "{{ piuser }}"
+    groups:
+      - dialout
+      - tty
+      - bluetooth
+      - kmem
+      - i2c
+      - kvm # /dev/udmabuf
+    append: true
+  become: true
+
+- name: Add local SSH identity as an authorized key
+  ansible.posix.authorized_key:
+    user: "{{ piuser }}"
+    key:  "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+  become: true
+
+- name: Remove default user ubuntu
+  ansible.builtin.user:
+    user: ubuntu
+    state: absent
+  become: true
+  when: ansible_user != "ubuntu"
+
+- name: Remove default user ubuntu home directory
+  ansible.builtin.file:
+    path: /home/ubuntu
+    state: absent
+  become: true
+  when: ansible_user != "ubuntu"

@@ -3,8 +3,8 @@
   ansible.builtin.file:
     path: "{{ gimp_path }}"
     state: directory
-    owner: "{{ gimp_user }}"
-    group: "{{ gimp_user }}"
+    owner: "{{ piuser }}"
+    group: "{{ piuser }}"
   become: true
 
 - name: deploy requirements file

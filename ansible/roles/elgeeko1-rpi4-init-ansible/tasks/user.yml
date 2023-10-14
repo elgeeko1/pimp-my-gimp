@@ -1,0 +1,70 @@
+---
+- name: create user {{ piuser }}
+  ansible.builtin.user:
+    name: "{{ piuser }}"
+    comment: "Raspberry Pi user"
+  become: true
+
+- name: add user {{ piuser }} to password-less sudousers
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers
+    state: present
+    line: "{{ piuser }} ALL=(ALL) NOPASSWD: ALL"
+  become: true
+
+- name: add user {{ piuser }} to admin groups
+  ansible.builtin.user:
+    name: "{{ piuser }}"
+    groups:
+      - sudo
+      - systemd-journal
+    append: true
+  become: true
+
+- name: add user {{ piuser }} to IO groups
+  ansible.builtin.user:
+    name: "{{ piuser }}"
+    groups:
+      - dialout
+      - tty
+      - bluetooth
+      - kmem
+      - i2c
+      - kvm # /dev/udmabuf
+    append: true
+  become: true
+
+- name: set path for local keys directory
+  ansible.builtin.set_fact:
+    rpi_keys_path: "{{ inventory_dir }}/keys"
+
+- name: create local keys directory
+  local_action:
+    module: ansible.builtin.file
+    path: "{{ rpi_keys_path }}"
+    state: directory
+
+# workaround: sometimes fails with 'chattr' which is executed
+# after a key is generated; running twice will generate the
+# the complete pair and a third time will confirm the keys are valid
+- name: generate ssh keypair for ansible user
+  local_action:
+    module: community.crypto.openssh_keypair
+    path: "{{ rpi_keys_path }}/ansible-rpi-ssh-key"
+  retries: 2
+  delay: 0
+  register: result
+  until: not result.failed
+
+- name: add ansible authorized key for {{ piuser }}
+  ansible.posix.authorized_key:
+    user: "{{ piuser }}"
+    key:  "{{ lookup('file', '{{ rpi_keys_path }}/ansible-rpi-ssh-key.pub') }}"
+  become: true
+  
+- name: add local SSH identity as an authorized key for {{ piuser }}
+  ansible.posix.authorized_key:
+    user: "{{ piuser }}"
+    key:  "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+  become: true
+  ignore_errors: true

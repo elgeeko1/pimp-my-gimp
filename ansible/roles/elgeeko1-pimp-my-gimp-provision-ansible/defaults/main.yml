@@ -1,0 +1,5 @@
+# hostname for the pi target
+pihost: 192.168.1.38
+
+# username to use for ansible and systemd service
+piuser: piuser

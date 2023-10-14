@@ -1,4 +1,4 @@
-# Ansible role to configure a Raspberry Pi as a Scoot controller
+# Ansible role to configure a Raspberry Pi as a Pimp-my-Gimp controller
 
 # Requirements
 Provisioning host:
@@ -10,5 +10,5 @@ Host that will be configured:
 # How to use this role
 
 ```bash
-$ ansible-playbook -i inventory.yml scoot.yml
+$ ansible-playbook -i inventory.yml provision.yml
 ```

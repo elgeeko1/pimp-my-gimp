@@ -1,7 +1,7 @@
 galaxy_info:
-  role_name: elgeeko1-ubuntu-common-ansible
+  role_name: elgeeko1-pimp-my-gimp-provision-ansible
   author: elgeeko1
-  description: "Configure a Raspberry Pi for controlling a dope scooter."
+  description: "Provision a Raspberry Pi for controlling a dope scooter."
   license: MIT
   platforms:
     - name: Ubuntu

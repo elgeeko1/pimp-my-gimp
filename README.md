@@ -51,3 +51,7 @@ Ideas for future features:
 ### Software
 - [Adafruit NeoPixel UberGuide](https://learn.adafruit.com/adafruit-neopixel-uberguide)
 - [Adafruit CircuitPython NeoPixel library](https://github.com/adafruit/Adafruit_CircuitPython_NeoPixel)
+
+
+### Tutorials
+- [Manage your Raspberry Pi fleet with Ansible](https://opensource.com/article/20/9/raspberry-pi-ansible)

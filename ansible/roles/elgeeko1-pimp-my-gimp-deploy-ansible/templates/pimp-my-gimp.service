@@ -3,8 +3,8 @@ Description=Pimp-my-Gimp service
 After=network.target
 
 [Service]
-User={{ gimp_user }}
-Group={{ gimp_user }}
+User={{ piuser }}
+Group={{ piuser }}
 WorkingDirectory={{ gimp_path }}
 ExecStart={{ gimp_path }}/run.sh
 Restart=always

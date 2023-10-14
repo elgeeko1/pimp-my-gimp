@@ -1,0 +1,8 @@
+# username to use for systemd service
+piuser: piuser
+
+# location to install application
+gimp_path: /opt/pimp-my-gimp
+
+# should this script restart the pimp-my-gimp-service at the end?
+gimp_service_reset: false
