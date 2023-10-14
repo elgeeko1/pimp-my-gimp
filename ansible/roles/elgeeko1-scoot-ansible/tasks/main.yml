@@ -1,4 +1,10 @@
 ---
+- name: apt install python3-venv
+  ansible.builtin.apt:
+    name: python3-venv
+    state: latest
+  become: true
+
 - name: pip install Raspberry pi GPIO
   ansible.builtin.pip:
     name:
