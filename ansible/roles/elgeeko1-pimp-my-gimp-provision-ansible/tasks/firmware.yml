@@ -1,0 +1,36 @@
+---
+- name: raspberry pi enable audio
+  lineinfile: 
+    path: /boot/firmware/config.txt
+    regexp: '^(.*)dtparam=audio=(.*)$' 
+    line: 'dtparam=audio=on'
+    backrefs: yes
+  become: true
+
+- name: raspberry pi enable i2c
+  lineinfile: 
+    path: /boot/firmware/config.txt
+    regexp: '^(.*)dtparam=i2c_arm=(.*)$' 
+    line: 'dtparam=i2c_arm=on'
+    backrefs: yes
+  become: true
+
+- name: raspberry pi enable spi
+  lineinfile: 
+    path: /boot/firmware/config.txt
+    regexp: '^(.*)dtparam=spi=(.*)$' 
+    line: 'dtparam=spi=on'
+    backrefs: yes
+  become: true
+
+- name: raspberry pi enable uart
+  lineinfile: 
+    path: /boot/firmware/config.txt
+    regexp: '^(.*)enable_uart=$' 
+    line: 'enable_uart=1'
+    backrefs: yes
+  become: true
+
+# - name: query raspi-config gpio status
+#   cmd: "raspi-config nonint get_rgpio"
+#   register: raspi-

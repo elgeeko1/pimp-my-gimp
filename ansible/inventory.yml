@@ -4,9 +4,9 @@ all:
     ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
   hosts:
     scoot:
-      ansible_host: "{{ pihost }}"
-      ansible_user: "{{ piuser }}"
-      ansible_ssh_private_key_file: "keys/ansible-rpi-ssh-key"
-    rpi-factory:
-      ansible_host: "{{ pihost }}"
+      ansible_host: "{{ raspi_host }}"
+      ansible_user: "{{ raspi_user }}"
+      ansible_ssh_private_key_file: "keys/ansible-raspi-ssh-key"
+    raspi-factory:
+      ansible_host: "{{ raspi_host }}"
       ansible_user: "ubuntu"

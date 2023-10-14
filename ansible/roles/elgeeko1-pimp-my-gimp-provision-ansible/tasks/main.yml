@@ -9,5 +9,8 @@
 - name: install packages
   ansible.builtin.import_tasks: packages.yml
 
-- name: configure user {{ piuser }}
+- name: configure user {{ raspi_user }}
   ansible.builtin.import_tasks: user.yml
+
+- name: configure Raspberry Pi firmware
+  ansible.builtin.import_tasks: firmware.yml

@@ -1,47 +1,34 @@
 ---
-- name: create user {{ piuser }}
+- name: create user {{ raspi_user }}
   ansible.builtin.user:
-    name: "{{ piuser }}"
+    name: "{{ raspi_user }}"
     comment: "Raspberry Pi user"
   become: true
 
-- name: add user {{ piuser }} to password-less sudousers
+- name: add user {{ raspi_user }} to password-less sudousers
   ansible.builtin.lineinfile:
     path: /etc/sudoers
     state: present
-    line: "{{ piuser }} ALL=(ALL) NOPASSWD: ALL"
+    line: "{{ raspi_user }} ALL=(ALL) NOPASSWD: ALL"
   become: true
 
-- name: add user {{ piuser }} to admin groups
+- name: add user {{ raspi_user }} to admin groups
   ansible.builtin.user:
-    name: "{{ piuser }}"
+    name: "{{ raspi_user }}"
     groups:
       - sudo
       - systemd-journal
     append: true
   become: true
 
-- name: add user {{ piuser }} to IO groups
-  ansible.builtin.user:
-    name: "{{ piuser }}"
-    groups:
-      - dialout
-      - tty
-      - bluetooth
-      - kmem
-      - i2c
-      - kvm # /dev/udmabuf
-    append: true
-  become: true
-
 - name: set path for local keys directory
   ansible.builtin.set_fact:
-    rpi_keys_path: "{{ inventory_dir }}/keys"
+    raspi_local_keys_path: "{{ inventory_dir }}/keys"
 
 - name: create local keys directory
   local_action:
     module: ansible.builtin.file
-    path: "{{ rpi_keys_path }}"
+    path: "{{ raspi_local_keys_path }}"
     state: directory
 
 # workaround: sometimes fails with 'chattr' which is executed
@@ -50,21 +37,21 @@
 - name: generate ssh keypair for ansible user
   local_action:
     module: community.crypto.openssh_keypair
-    path: "{{ rpi_keys_path }}/ansible-rpi-ssh-key"
+    path: "{{ raspi_local_keys_path }}/ansible-raspi-ssh-key"
   retries: 2
   delay: 0
   register: result
   until: not result.failed
 
-- name: add ansible authorized key for {{ piuser }}
+- name: add ansible authorized key for {{ raspi_user }}
   ansible.posix.authorized_key:
-    user: "{{ piuser }}"
-    key:  "{{ lookup('file', '{{ rpi_keys_path }}/ansible-rpi-ssh-key.pub') }}"
+    user: "{{ raspi_user }}"
+    key:  "{{ lookup('file', '{{ raspi_local_keys_path }}/ansible-raspi-ssh-key.pub') }}"
   become: true
   
-- name: add local SSH identity as an authorized key for {{ piuser }}
+- name: add local SSH identity as an authorized key for {{ raspi_user }}
   ansible.posix.authorized_key:
-    user: "{{ piuser }}"
+    user: "{{ raspi_user }}"
     key:  "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
   become: true
   ignore_errors: true

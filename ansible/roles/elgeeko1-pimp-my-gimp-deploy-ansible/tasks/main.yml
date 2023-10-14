@@ -6,7 +6,7 @@
     force_apt_get: true # aptitude may not be installed
   become: true
 
-- name: configure user {{ piuser }}
+- name: configure user {{ raspi_user }}
   ansible.builtin.import_tasks: user.yml
 
 - name: install application requirements

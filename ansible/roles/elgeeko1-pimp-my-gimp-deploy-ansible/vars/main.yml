@@ -1,6 +1,3 @@
-# username to use for systemd service
-piuser: piuser
-
 # location to install application
 gimp_path: /opt/pimp-my-gimp
 

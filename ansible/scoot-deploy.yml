@@ -6,4 +6,4 @@
     - name: Scoot
       role: elgeeko1-pimp-my-gimp-deploy-ansible
       vars:
-        pihost: 192.168.1.38
+        raspi_host: 192.168.1.38

@@ -1,9 +1,0 @@
----
-- name: factory-init
-  hosts: rpi-factory
-  gather_facts: true
-  roles:
-    - name: Factory RPI4 init
-      role: elgeeko1-rpi4-init-ansible
-      vars:
-        pihost_hostname: scoot

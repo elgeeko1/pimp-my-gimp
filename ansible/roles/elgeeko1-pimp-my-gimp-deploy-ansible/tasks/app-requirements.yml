@@ -1,10 +1,11 @@
 ---
-- name: Create application directory {{ gimp_path }}
+- name: create application directory {{ gimp_path }}
   ansible.builtin.file:
     path: "{{ gimp_path }}"
     state: directory
-    owner: "{{ piuser }}"
-    group: "{{ piuser }}"
+    owner: "{{ raspi_user }}"
+    group: "{{ raspi_user }}"
+    recurse: true
   become: true
 
 - name: deploy requirements file

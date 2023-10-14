@@ -1,5 +1,5 @@
 galaxy_info:
-  role_name: elgeeko1-rpi4-init-ansible
+  role_name: elgeeko1-raspi-init-ansible
   author: elgeeko1
   description: "Configure a Raspberry Pi 4 running a factory-fresh Ubuntu image"
   license: MIT

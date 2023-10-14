@@ -1,21 +1,21 @@
 ---
-- name: add user {{ piuser }} to password-less sudousers
+- name: add user {{ raspi_user }} to password-less sudousers
   ansible.builtin.lineinfile:
     path: /etc/sudoers
     state: present
-    line: "{{ piuser }} ALL=(ALL) NOPASSWD: ALL"
+    line: "{{ raspi_user }} ALL=(ALL) NOPASSWD: ALL"
   become: true
 
-- name: add user {{ piuser }} to group systemd-journal
+- name: add user {{ raspi_user }} to group systemd-journal
   ansible.builtin.user:
-    name: "{{ piuser }}"
+    name: "{{ raspi_user }}"
     groups: systemd-journal
     append: true
   become: true
 
-- name: add user {{ piuser }} to IO groups
+- name: add user {{ raspi_user }} to IO groups
   ansible.builtin.user:
-    name: "{{ piuser }}"
+    name: "{{ raspi_user }}"
     groups:
       - dialout
       - tty

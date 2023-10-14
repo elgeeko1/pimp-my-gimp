@@ -1,11 +1,11 @@
 ---
-- name: set hostname {{ pihost }}
+- name: set hostname {{ raspi_host }}
   ansible.builtin.hostname:
-    name: "{{ pihost_hostname }}"
+    name: "{{ raspi_hostname }}"
   become: true
   register: hostname
 
-- name: reboot
+- name: reboot to apply hostname
   ansible.builtin.reboot:
   become: true
   when: hostname.changed
