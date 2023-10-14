@@ -113,9 +113,14 @@ def run_web_server(pixels: neopixel.NeoPixel):
     def command():
         if request.args.get("strobe"):
             pixels_strobe(pixels)
-        if request.args.get("cylon"):
+            pixels_solid(pixels)
+        elif request.args.get("cylon"):
             pixels_cylon(pixels)
-        pixels_solid(pixels)
+            pixels_solid(pixels)
+        elif request.args.get("off"):
+            pixels_solid(pixels, (0,0,0))
+        else:
+            pixels_solid(pixels, (0,0,0))
         return ""
     
     app.config['TEMPLATES_AUTO_RELOAD'] = True

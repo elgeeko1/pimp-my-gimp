@@ -25,6 +25,10 @@ body, h1,h2,h3,h4,h5,h6 {
   border: 3px solid navy;
   background-color: maroon;
 }
+.gimp-actions {
+  text-align: center;
+  bottom: 25px;
+}
 </style>
 <script type=text/javascript>
   // issue an HTTP GET request to send a command to the target
@@ -59,23 +63,27 @@ body, h1,h2,h3,h4,h5,h6 {
 <div class="w3-main">
 
   <!-- Header -->
-  <header class="w3-container w3-center" style="padding:128px 16px" id="home">
+  <header class="w3-container w3-center" style="padding-top: 50px;" id="home">
     <h1 class="w3-xxlarge"><b>Pimp my Gimp</b></h1>
     <p class="w3-xlarge"><b><i>- Glory in Failure -</i></b></p>
   </header>
   <!-- End Header -->
 
   <!-- Actions Section -->
-  <div class="w3-padding-32 w3-content " id="actions" style="text-align: center;">
+  <div class="w3-content gimp-actions" id="actions">
     <button class="w3-button w3-light-grey w3-section gimp-command-button" onclick="command('strobe')">
-        <i class="fa fa-seizure"></i>Strobe</a>
+      <i class="fa fa-seizure"></i>Strobe</a>
     </button>
     &nbsp;
     <button class="w3-button w3-light-grey w3-section gimp-command-button" onclick="command('cylon')">
       <i class="fa fa-seizure"></i>Cylon</a>
-  </button>
-  <!-- End Actions Section -->
+    </button>
+    <br />
+    <button class="w3-button w3-light-grey w3-section gimp-command-button" onclick="command('off')">
+      <i class="fa fa-seizure"></i>Off</a>
+    </button>
   </div>
+  <!-- End Actions Section -->
 
 <!-- END PAGE CONTENT -->
 </div>
