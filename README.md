@@ -3,7 +3,7 @@
 >_When Life Gives You Lemons, You Paint That Shit Gold_
 > <br>\- Atmosphere
 
-Pimp out your mobility knee scoter! Trick out your scooter with battery-operated programmable LED underlighting, powered by a Raspberry Pi.
+Pimp out your mobility knee scoter! Trick out your scooter with battery-operated programmable LED underlighting. Powered by Raspberry Pi and Python.
 
 <img src="https://i.imgur.com/owE0TVs.jpg"
     height="250"
@@ -44,6 +44,10 @@ Ideas for future features:
 - Power
   - [Talentcell 22400mAh 82.88Wh lithium ion battery PB240A1](https://www.amazon.com/dp/B078T7M9HZ)
   - [ALITOVE 5V 10A Power Supply](https://www.amazon.com/dp/B0852HL336)
+- Wiring
+  - [USB 2.0 Male Bare Cable Pigtail](https://www.amazon.com/dp/B09ZQNJ2DJ)
+  - [3-pin JST SM Plug](https://www.adafruit.com/product/1663)
 
 ### Software
+- [Adafruit NeoPixel UberGuide](https://learn.adafruit.com/adafruit-neopixel-uberguide)
 - [Adafruit CircuitPython NeoPixel library](https://github.com/adafruit/Adafruit_CircuitPython_NeoPixel)
