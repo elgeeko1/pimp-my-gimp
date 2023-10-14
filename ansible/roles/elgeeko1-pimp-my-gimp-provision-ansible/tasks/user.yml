@@ -25,7 +25,7 @@
       - kvm # /dev/udmabuf
     append: true
   become: true
-
+  
 - name: add local SSH identity as an authorized key
   ansible.posix.authorized_key:
     user: "{{ raspi_user }}"

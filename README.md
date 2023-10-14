@@ -54,4 +54,10 @@ Ideas for future features:
 
 
 ### Tutorials
+- [The raspi-config tool](https://www.raspberrypi.com/documentation/computers/configuration.html)
 - [Manage your Raspberry Pi fleet with Ansible](https://opensource.com/article/20/9/raspberry-pi-ansible)
+
+# Authors
+
+- [elgeeko1](https://www.raspberrypi.com/documentation/computers/configuration.html)
+- [slkollasch](https://github.com/slkollasch)

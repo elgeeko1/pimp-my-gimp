@@ -1,13 +1,11 @@
 ---
-- name: apt update cache
-  ansible.builtin.apt:
-    update_cache: true
-    cache_valid_time: 3600 # 1 hr
-    force_apt_get: true # aptitude may not be installed
-  become: true
-
-- name: configure user {{ raspi_user }}
-  ansible.builtin.import_tasks: user.yml
+# uncomment if application needs apt packages
+# - name: apt update cache
+#   ansible.builtin.apt:
+#     update_cache: true
+#     cache_valid_time: 3600 # 1 hr
+#     force_apt_get: true # aptitude may not be installed
+#   become: true
 
 - name: install application requirements
   ansible.builtin.import_tasks: app-requirements.yml
