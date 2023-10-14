@@ -1,5 +1,5 @@
 galaxy_info:
-  role_name: elgeeko1-scoot-ansible
+  role_name: elgeeko1-ubuntu-common-ansible
   author: elgeeko1
   description: "Configure a Raspberry Pi for controlling a dope scooter."
   license: MIT
@@ -8,4 +8,14 @@ galaxy_info:
       versions:
         - all
 collections:
+  - community.docker
   - community.general
+  - ansible.utils
+roles:
+  - src: https://github.com/elgeeko1/elgeeko1-ubuntu-common-ansible
+    name: elgeeko1-ubuntu-common-ansible
+    version: main
+
+  - src: https://github.com/elgeeko1/elgeeko1-docker-ansible
+    name: elgeeko1-docker-ansible
+    version: main
