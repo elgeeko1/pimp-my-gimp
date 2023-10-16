@@ -48,7 +48,7 @@ First confirm you are able to connect to the target via SSH. Then copy the conte
 to the target (replacing the IP address with that 
 of your raspberry pi):
 ```console
-$ scp -r pimp-my-gimp ubuntu@192.168.1.100:
+scp -r pimp-my-gimp ubuntu@192.168.1.100:
 ```
 
 Run the remainder of these commands from an SSH
