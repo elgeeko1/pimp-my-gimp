@@ -19,6 +19,131 @@ Pimp out your mobility knee scoter! Trick out your scooter with battery-operated
 1. Mobile-friendly web interface
 1. Battery operated
 
+# Flash Ubuntu Server to your SD card
+Follow the guide [How to install Ubuntu Server on your Raspberry Pi](https://ubuntu.com/tutorials/how-to-install-ubuntu-on-your-raspberry-pi#1-overview) to flash Ubuntu Server to your SD card.
+
+In step 3 "Advanced options" set the following username and password:
+> username: ubuntu <br>
+password: [a password you'll remember]
+
+You may skip step 5 "Install a Desktop".
+
+Take note of the IP address of the device once it is online.
+
+# Install pimp-my-gimp
+There are two methods to configure the Raspberry Pi operating system with the packages
+needed to run the application.
+
+*Install on-target*: Use SSH and run commands directly on the device. This is the most
+straightforward method.
+
+*Use Ansible from a host controller* (advanced): Use the Ansible provisioning tool on your
+host computer to remotely provision the Rasberry Pi. This requires installing the Ansible
+toolchain 
+and some familiarity with the tool.
+
+### Install method 1: Configure on-target (easiest)
+
+First confirm you are able to connect to the target via SSH. Then copy the contents of this github repository
+to the target (replacing the IP address with that 
+of your raspberry pi):
+```console
+$ scp -r pimp-my-gimp ubuntu@192.168.1.100:
+```
+
+Run the remainder of these commands from an SSH
+terminal on your Raspberry Pi (`ssh ubuntu@192.168.1.100` -- replace the IP address with that of your
+device.)
+ 
+```console
+sudo apt update
+
+sudo apt install python3-pip sshpass
+
+pip install --user ansible
+```
+
+Add Ansible to the path and confirm execution
+by checking the Ansible version.
+
+```console
+echo 'PATH="$PATH:/home/ubuntu/.local/bin"' >> ~/.bashrc
+
+source ~/.bashrc
+
+ansible --version
+```
+
+Change into the pimp-my-gimp ansible folder and 
+run the factory provisioning script. This script
+sets the hostname and configures a user for the
+pimp-my-gimp service. Replace the IP address
+with that of your Raspberry Pi.
+
+```console
+cd ~/pimp-my-gimp/ansible
+
+ansible-playbook \
+  -i inventory.yml \
+  --connection=local \
+  --extra-vars "raspi_host=192.168.1.100" \
+  raspi-factory-init.yml \
+  --ask-pass \
+  --ask-become
+```
+
+When prompted, enter the password for the user 'ubuntu' that you configured in the Raspberry Pi image tool.
+
+The Raspberry Pi may restart at the conclusion of this script. Once it is rebooted, SSH and return to the `pimp-my-gimp/ansible` directory to continue. Run the Ansible provisioning script:
+
+```console
+ansible-galaxy install -r roles/requirements.yml
+
+ansible-playbook \
+  -i inventory.yml \
+  --connection=local \
+  --extra-vars "raspi_host=192.168.1.100" \
+  scoot-provision.yml
+```
+
+Your Raspberry Pi now has the packages and operating system configuration to run pimp-my-gimp. SSH and return to the `pimp-my-gimp/ansible` directory, then run the Ansible script to deploy the application:
+
+```console
+ansible-playbook \
+  -i inventory.yml \
+  --connection=local \
+  --extra-vars "raspi_host=192.168.1.100" \
+  scoot-deploy.yml
+```
+
+### (alternate) Install method 2: Configure from a host controller
+If you prefer to provision the Raspberry Pi from a host controller, follow these steps.
+
+Install ansible according to the guide [Installing Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html).
+
+All commands should be run on your local host from the `pimp-my-gimp/ansible` directory. When prompted, enter the password for the user 'ubuntu' that you configured in the Raspberry Pi image tool.
+
+```console
+ansible-playbook \
+  -i inventory.yml \
+  --extra-vars "raspi_host=192.168.1.100" \
+  raspi-factory-init.yml \
+  --ask-pass \
+  --ask-become
+
+ansible-playbook \
+  -i inventory.yml \
+  --extra-vars "raspi_host=192.168.1.100" \
+  scoot-provision.yml
+
+ansible-playbook \
+  -i inventory.yml \
+  --extra-vars "raspi_host=192.168.1.100" \
+  scoot-deploy.yml
+```
+
+Replace the IP address with that of your Raspberry Pi.
+
 # Future Features
 
 Ideas for future features: 
@@ -56,6 +181,7 @@ Ideas for future features:
 ### Tutorials
 - [The raspi-config tool](https://www.raspberrypi.com/documentation/computers/configuration.html)
 - [Manage your Raspberry Pi fleet with Ansible](https://opensource.com/article/20/9/raspberry-pi-ansible)
+- [Installing Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html)
 
 # Authors
 

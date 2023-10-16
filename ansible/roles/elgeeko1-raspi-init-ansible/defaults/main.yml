@@ -1,8 +1,0 @@
-# username to create for subsequent SSH access
-raspi_user: raspi_user
-
-# host address for the rpi target
-raspi_host: 192.168.1.38
-
-# hostname for the rpi target
-raspi_hostname: rpi

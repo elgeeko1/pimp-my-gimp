@@ -1,6 +1,0 @@
----
-- name: configure user {{ raspi_user }}
-  ansible.builtin.import_tasks: user.yml
-
-- name: hostname {{ raspi_hostname }}
-  ansible.builtin.import_tasks: hostname.yml

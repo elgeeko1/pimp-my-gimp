@@ -1,0 +1,20 @@
+---    
+collections:
+- name: community.docker
+- name: community.general
+- name: community.crypto
+- name: ansible.utils
+- name: ansible.posix
+
+roles:
+- src: https://github.com/elgeeko1/elgeeko1-ubuntu-common-ansible
+  name: elgeeko1-ubuntu-common-ansible
+  version: main
+
+- src: https://github.com/elgeeko1/elgeeko1-docker-ansible
+  name: elgeeko1-docker-ansible
+  version: main
+
+- src: https://github.com/elgeeko1/elgeeko1-raspi-init-ansible
+  name: elgeeko1-raspi-init-ansible
+  version: main
