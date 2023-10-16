@@ -42,6 +42,8 @@ host computer to remotely provision the Rasberry Pi. This requires installing th
 toolchain 
 and some familiarity with the tool.
 
+Once installed, a webserver will be running on port 80 of your device.
+
 ### Install method 1: Configure on-target (easiest)
 
 First confirm you are able to connect to the target via SSH. Then copy the contents of this github repository

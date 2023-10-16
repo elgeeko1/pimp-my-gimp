@@ -3,6 +3,7 @@
   ansible.builtin.copy:
     src:   "{{ gimp_app_local_path }}/site/"
     dest:  "{{ gimp_path }}"
+    force: true
     local_follow: false
 
 - name: deploy application pimp-my-gimp.py to {{ gimp_path }}

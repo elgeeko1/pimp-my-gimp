@@ -4,3 +4,4 @@ adafruit-blinka
 adafruit-circuitpython-neopixel
 flask 
 numpy
+pydub

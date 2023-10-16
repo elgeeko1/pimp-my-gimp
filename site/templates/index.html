@@ -4,6 +4,7 @@
 <title>Pimp my Gimp</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="/manifest.json">
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
@@ -26,8 +27,12 @@ body, h1,h2,h3,h4,h5,h6 {
   background-color: maroon;
 }
 .gimp-actions {
-  text-align: center;
+  position: fixed;
   bottom: 25px;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0 auto;
+  text-align: center;
 }
 </style>
 <script type=text/javascript>
@@ -72,15 +77,19 @@ body, h1,h2,h3,h4,h5,h6 {
   <!-- Actions Section -->
   <div class="w3-content gimp-actions" id="actions">
     <button class="w3-button w3-light-grey w3-section gimp-command-button" onclick="command('strobe')">
-      <i class="fa fa-seizure"></i>Strobe</a>
+      Strobe
     </button>
     &nbsp;
     <button class="w3-button w3-light-grey w3-section gimp-command-button" onclick="command('cylon')">
-      <i class="fa fa-seizure"></i>Cylon</a>
+      Cylon
     </button>
     <br />
+    <button class="w3-button w3-light-grey w3-section gimp-command-button" onclick="command('alarm')">
+      Alarm
+    </button>
+    &nbsp;
     <button class="w3-button w3-light-grey w3-section gimp-command-button" onclick="command('off')">
-      <i class="fa fa-seizure"></i>Off</a>
+      Off
     </button>
   </div>
   <!-- End Actions Section -->

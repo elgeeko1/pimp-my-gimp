@@ -23,6 +23,7 @@
       - kmem
       - i2c
       - kvm # /dev/udmabuf
+      - audio
     append: true
   become: true
   

@@ -8,10 +8,9 @@ Group={{ raspi_user }}
 WorkingDirectory={{ gimp_path }}
 ExecStart={{ gimp_path }}/run.sh
 Restart=always
-ReloadSignal=SIGINT
 KillSignal=SIGINT
-StandardOutput=syslog+console
-StandardError=syslog+console
+StandardOutput=journal+console
+StandardError=journal+console
 
 [Install]
 WantedBy=multi-user.target

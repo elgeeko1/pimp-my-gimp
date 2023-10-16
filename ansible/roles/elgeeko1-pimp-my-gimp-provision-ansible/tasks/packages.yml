@@ -14,3 +14,11 @@
       - raspi-config
     state: latest
   become: true
+
+- name: apt install audio libraries
+  ansible.builtin.apt:
+    pkg:
+      - ffmpeg
+      - libavcodec-extra
+    state: latest
+  become: true
