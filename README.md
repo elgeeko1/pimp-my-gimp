@@ -9,15 +9,20 @@ Pimp out your mobility knee scoter! Trick out your scooter with battery-operated
     height="250"
     width="250"
     alt="x-ray of pin implanted in a broken ankle"/>
+&nbsp;
 <img src="https://m.media-amazon.com/images/I/81JP777YLmL._AC_SL1500_.jpg"
     height="250"
     width="250"
     alt="hot pink knee scooter"/>
 
 # Features
+Base features:
 1. Programmable LED underlighting
 1. Mobile-friendly web interface
 1. Battery operated
+
+Additional optional features:
+- Audio output
 
 # Flash Ubuntu Server to your SD card
 Follow the guide [How to install Ubuntu Server on your Raspberry Pi](https://ubuntu.com/tutorials/how-to-install-ubuntu-on-your-raspberry-pi#1-overview) to flash Ubuntu Server to your SD card.
@@ -146,6 +151,32 @@ ansible-playbook \
 
 Replace the IP address with that of your Raspberry Pi.
 
+# Hardware
+
+### Scooter, Raspberry Pi, battery & LED strip light
+- Scooter
+  - [KneeRover Knee Scooter](https://www.amazon.com/dp/B01J4AMXD8)
+- Raspberry Pi
+  - [Raspberry Pi 4B](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/)
+  - [Samsung PRO Endurance 32GB MicroSDXC Memory Card](https://www.amazon.com/gp/product/B09W9XYQCQ)
+  - [Miuzei Raspberry Pi 4B Case](https://www.amazon.com/dp/B0C1NJP77D)
+- LED strip light
+  - [Adafruit NeoPixel 332 LED-per-Meter Silicone Bead LED Strip](https://www.adafruit.com/product/4865)
+- Power
+  - [Talentcell 22400mAh 82.88Wh lithium ion battery PB240A1](https://www.amazon.com/dp/B078T7M9HZ)
+  - [ALITOVE 5V 10A Power Supply](https://www.amazon.com/dp/B0852HL336) (for prototyping)
+- Wiring
+  - [USB 2.0 Male Bare Cable Pigtail](https://www.amazon.com/dp/B09ZQNJ2DJ)
+  - [3-pin JST SM Plug](https://www.adafruit.com/product/1663)
+
+### Speakers
+- Amplifier
+  - [SparkFun Qwiic Speaker Amp](https://www.sparkfun.com/products/20690)
+- Speakers
+  - [Sparkfun Thin Speaker - 4 Ohm, 2.5W, 28mm](https://www.sparkfun.com/products/21311)
+- Wiring
+  - [3.5mm Audio Cable - Male to Male](https://www.amazon.com/3-5mm-CGTime-Plated-Auxiliary-Stereo/dp/B074QHNY5Q)
+
 # Future Features
 
 Ideas for future features: 
@@ -157,23 +188,10 @@ Ideas for future features:
 - Battery assisted drive
 - Speed thresholded siren
 
-# References
 
-### Hardware
-- Scooter
-  - [KneeRover Knee Scooter](https://www.amazon.com/dp/B01J4AMXD8)
-- Raspberry Pi
-  - [Raspberry Pi 4B](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/)
-  - [Samsung PRO Endurance 64GB MicroSDXC Memory Card](https://www.amazon.com/gp/product/B09W9XYQCQ)
-  - [Miuzei Raspberry Pi 4B Case](https://www.amazon.com/dp/B0C1NJP77D)
-- LED strip light
-  - [Adafruit NeoPixel 332 LED-per-Meter Silicone Bead LED Strip](https://www.adafruit.com/product/4865)
-- Power
-  - [Talentcell 22400mAh 82.88Wh lithium ion battery PB240A1](https://www.amazon.com/dp/B078T7M9HZ)
-  - [ALITOVE 5V 10A Power Supply](https://www.amazon.com/dp/B0852HL336)
-- Wiring
-  - [USB 2.0 Male Bare Cable Pigtail](https://www.amazon.com/dp/B09ZQNJ2DJ)
-  - [3-pin JST SM Plug](https://www.adafruit.com/product/1663)
+
+
+# References
 
 ### Software
 - [Adafruit NeoPixel UberGuide](https://learn.adafruit.com/adafruit-neopixel-uberguide)
