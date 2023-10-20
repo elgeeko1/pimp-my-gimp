@@ -37,10 +37,12 @@ COLOR_IDLE = (0, 64, 64)
 ENCODER_PIN = 12  # GPIO 12 / pin 32
 # Encoder count. Updated asynchronously.
 ENCODER_COUNT = 0
-# Timestamp of last encoder event
+# Timestamp of last encoder event. Updated asynchronously.
 ENCODER_TIMESTAMP = time.time()
-# Most recently recorded encoder speed, in pulses per second (PPS)
+# Most recently recorded encoder speed, in pulses per second (PPS).
+# Updated asyncronously.
 ENCODER_PPS = 0
+
 
 # initialize the pixels array
 #   return: pixel array
@@ -63,6 +65,7 @@ def pixels_display_hello(pixels: neopixel.NeoPixel):
         pixels_solid(pixels, color)
         time.sleep(0.250)
     pixels_solid(pixels, (0,0,0))
+
 
 # display a rotating 'cylon' pattern
 #   pixels: initialized pixel array
@@ -120,9 +123,15 @@ def pixels_solid(pixels: neopixel.NeoPixel, color: tuple = COLOR_IDLE):
 
 # encoder init
 def encoder_init():
+    global ENCODER_COUNT
+    global ENCODER_TIMESTAMP
+    global ENCODER_PPS
     GPIO.setmode(GPIO.BCM)
-    GPIO.setup(ENCODER_PIN, GPIO.IN)
+    GPIO.setup(ENCODER_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     GPIO.add_event_detect(ENCODER_PIN, GPIO.RISING, callback=encoder_handler)
+    ENCODER_COUNT = 0
+    ENCODER_TIMESTAMP = time.time()
+    ENCODER_PPS = 0
 
 
 # encoder edge event callback
