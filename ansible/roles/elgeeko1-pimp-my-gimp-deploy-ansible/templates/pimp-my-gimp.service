@@ -9,6 +9,7 @@ WorkingDirectory={{ gimp_path }}
 ExecStart={{ gimp_path }}/run.sh
 Restart=always
 KillSignal=SIGINT
+RestartKillSignal=SIGINT
 StandardOutput=journal+console
 StandardError=journal+console
 
