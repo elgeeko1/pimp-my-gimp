@@ -7,28 +7,40 @@
 # Must be run as 'sudo'
 #########
 
+# system libraries
 import time
 import sys
 import os
 
+# adafruit circuitpython libraries
 import board
 import neopixel
 
+# GPIO libraries
+import RPi.GPIO as GPIO
+
+# audio libraries
 from pydub import AudioSegment
 from pydub.playback import play
 
+# webserver libraries
 from flask import Flask, request, render_template, send_from_directory
 
 # NeoPixel communication over GPIO 18 (pin 12)
 PIXEL_PIN = board.D18
-
-# total number of NeoPixels in the array
+# NeoPixel total number of NeoPixels in the array
 PIXEL_COUNT = 163
-
-# should the program terminate (handles SIGINT, SIGHUP, SIGTERM)
-TERMINATE = False
-
+# NeoPixel idle color
 COLOR_IDLE = (0, 64, 64)
+
+# Encoder GPIO pin
+ENCODER_PIN = 12  # GPIO 12 / pin 32
+# Encoder count. Updated asynchronously.
+ENCODER_COUNT = 0
+# Timestamp of last encoder event
+ENCODER_TIMESTAMP = time.time()
+# Most recently recorded encoder speed, in pulses per second (PPS)
+ENCODER_PPS = 0
 
 # initialize the pixels array
 #   return: pixel array
@@ -106,6 +118,27 @@ def pixels_solid(pixels: neopixel.NeoPixel, color: tuple = COLOR_IDLE):
     pixels.show()
 
 
+# encoder init
+def encoder_init():
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(ENCODER_PIN, GPIO.IN)
+    GPIO.add_event_detect(ENCODER_PIN, GPIO.RISING, callback=encoder_handler)
+
+
+# encoder edge event callback
+# called automatically in a separate thread on encoder pulses
+#   channel: event channel
+def encoder_handler(channel: int):
+    global ENCODER_COUNT
+    global ENCODER_TIMESTAMP
+    global ENCODER_PPS
+    ENCODER_COUNT = ENCODER_COUNT + 1
+    previous_timestamp = ENCODER_TIMESTAMP
+    ENCODER_TIMESTAMP = time.time()
+    ENCODER_PPS = 1.0 / (ENCODER_TIMESTAMP - previous_timestamp)
+    print("ENCODER_PPS = " + str(ENCODER_PPS))
+
+
 # run the web server - blocking method
 #   pixels: initialized pixel array
 def run_web_server(pixels: neopixel.NeoPixel):
@@ -116,10 +149,12 @@ def run_web_server(pixels: neopixel.NeoPixel):
     # the range of acoustic interest is determined empirically
     alarm_sound = AudioSegment.from_mp3("static/sounds/red-alert.mp3")[100:1250]
 
+    # return index page
     @app.route("/")
     def index():
         return render_template('index.html')
-    
+
+    # return favicon and manifest    
     @app.route("/favicon.ico")
     def favicon():
         return send_from_directory(
@@ -131,7 +166,8 @@ def run_web_server(pixels: neopixel.NeoPixel):
         return send_from_directory(
             os.path.join(app.root_path, 'static'),
             'manifest.json',)
-        
+    
+    # command endpoint: route argument to command
     @app.route("/command")
     def command():
         if request.args.get("strobe"):
@@ -164,11 +200,13 @@ def main():
         print("Application starting")
         pixels_display_hello(pixels)
         pixels_solid(pixels)
+        encoder_init()
         run_web_server(pixels)
         rcode = 0
     finally:
         pixels_solid(pixels, (0,0,0))
         pixels.deinit()
+        GPIO.cleanup()
         print("Application exiting")
     sys.exit(rcode)
 
