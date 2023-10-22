@@ -11,6 +11,7 @@
 import time
 import sys
 import os
+import math
 
 # adafruit circuitpython libraries
 import board
@@ -37,12 +38,22 @@ COLOR_IDLE = (0, 64, 64)
 ENCODER_PIN = 12  # GPIO 12 / pin 32
 # Encoder count. Updated asynchronously.
 ENCODER_COUNT = 0
-# Timestamp of last encoder event. Updated asynchronously.
-ENCODER_TIMESTAMP = time.time()
-# Most recently recorded encoder speed, in pulses per second (PPS).
+# Encoder window length to remember, in unit of Encoder pulses.
+ENCODER_WINDOW_PULSES = 10
+# List of latest timestamps from Encoder.
+# invariant: no. of ENCODER_TIMESTAMPS will never > ENCODER_WINDOW_PULSES
+ENCODER_TIMESTAMPS = []
+# List of times elapsed between latest Encoder pulses.
+# invariant: no. of ENCODER_DELTAS will never > ENCODER_WINDOW_PULSES
+ENCODER_DELTAS = []
+# Most recently recorded encoder speed, in feet per second
 # Updated asyncronously.
-ENCODER_PPS = 0
-
+ENCODER_FPS = 0
+# Encoder counts per revolution of the wheel
+ENCODER_PULSES_PER_REV = 4
+# Encoder pulses per linear foot
+# wheel diameter is 7.5", so circumference is pi * 7.5
+ENCODER_PULSES_PER_FOOT = float(ENCODER_PULSES_PER_REV) / (math.pi * (7.5/12.0))
 
 # initialize the pixels array
 #   return: pixel array
@@ -125,13 +136,13 @@ def pixels_solid(pixels: neopixel.NeoPixel, color: tuple = COLOR_IDLE):
 def encoder_init():
     global ENCODER_COUNT
     global ENCODER_TIMESTAMP
-    global ENCODER_PPS
+    global ENCODER_FPS
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(ENCODER_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     GPIO.add_event_detect(ENCODER_PIN, GPIO.RISING, callback=encoder_handler)
     ENCODER_COUNT = 0
     ENCODER_TIMESTAMP = time.time()
-    ENCODER_PPS = 0
+    ENCODER_FPS = 0
 
 
 # encoder edge event callback
@@ -139,12 +150,39 @@ def encoder_init():
 #   channel: event channel
 def encoder_handler(channel: int):
     global ENCODER_COUNT
-    global ENCODER_TIMESTAMP
-    global ENCODER_PPS
+    global ENCODER_WINDOW_PULSES
+    global ENCODER_TIMESTAMPS
+    global ENCODER_DELTAS
+    global ENCODER_FPS
+
     ENCODER_COUNT = ENCODER_COUNT + 1
-    previous_timestamp = ENCODER_TIMESTAMP
-    ENCODER_TIMESTAMP = time.time()
-    ENCODER_PPS = 1.0 / (ENCODER_TIMESTAMP - previous_timestamp)
+
+    latest_timestamp = time.time()
+
+    # drop old timestamp
+    while len(ENCODER_TIMESTAMPS) >= ENCODER_WINDOW_PULSES:
+        ENCODER_TIMESTAMPS.pop(0)
+
+    # add new timestamp
+    ENCODER_TIMESTAMPS.append(latest_timestamp)
+
+    # create latest delta
+    if len(ENCODER_TIMESTAMPS) >= 2:
+        delta = ENCODER_TIMESTAMPS[-1] - ENCODER_TIMESTAMPS[-2]
+
+        # drop old delta
+        while len(ENCODER_DELTAS) >= ENCODER_WINDOW_PULSES:
+            ENCODER_DELTAS.pop(0)
+    
+        # add new delta
+        ENCODER_DELTAS.append(delta)
+
+    # calculate the average pulses per second over the window
+    if len(ENCODER_DELTAS) > 0:
+        pulses_per_second =  len(ENCODER_DELTAS) / sum(ENCODER_DELTAS)
+        ENCODER_FPS = pulses_per_second / ENCODER_PULSES_PER_FOOT
+    else:
+        ENCODER_FPS = 0
 
 
 # run the web server - blocking method
@@ -193,7 +231,9 @@ def run_web_server(pixels: neopixel.NeoPixel):
         elif request.args.get("off"):
             pixels_solid(pixels, (0,0,0))
         elif request.args.get("speed"):
-            print("ENCODER_PPS = " + str(ENCODER_PPS))
+            print("Speed = " + str(ENCODER_FPS) + " feet per second")
+            speed_mph = (ENCODER_FPS / 5280.0) * 3600.0
+            print("Speed = " + str(speed_mph) + " mph")
         else:
             # unknown command -- do nothing
             pass
