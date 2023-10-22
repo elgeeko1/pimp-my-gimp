@@ -145,7 +145,6 @@ def encoder_handler(channel: int):
     previous_timestamp = ENCODER_TIMESTAMP
     ENCODER_TIMESTAMP = time.time()
     ENCODER_PPS = 1.0 / (ENCODER_TIMESTAMP - previous_timestamp)
-    print("ENCODER_PPS = " + str(ENCODER_PPS))
 
 
 # run the web server - blocking method
@@ -193,6 +192,8 @@ def run_web_server(pixels: neopixel.NeoPixel):
             pixels_solid(pixels, COLOR_IDLE)
         elif request.args.get("off"):
             pixels_solid(pixels, (0,0,0))
+        elif request.args.get("speed"):
+            print("ENCODER_PPS = " + str(ENCODER_PPS))
         else:
             # unknown command -- do nothing
             pass
