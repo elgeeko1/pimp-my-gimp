@@ -9,6 +9,7 @@
 
 # system libraries
 import time
+import datetime
 import sys
 import os
 import math
@@ -25,7 +26,9 @@ from pydub import AudioSegment
 from pydub.playback import play
 
 # webserver libraries
-from flask import Flask, request, render_template, send_from_directory
+from flask import Flask, request, render_template
+from flask import send_from_directory  # send raw file
+from flask import jsonify  # graphing
 
 # NeoPixel communication over GPIO 18 (pin 12)
 PIXEL_PIN = board.D18
@@ -36,24 +39,17 @@ COLOR_IDLE = (0, 64, 64)
 
 # Encoder GPIO pin
 ENCODER_PIN = 12  # GPIO 12 / pin 32
-# Encoder count. Updated asynchronously.
-ENCODER_COUNT = 0
 # Encoder window length to remember, in unit of Encoder pulses.
-ENCODER_WINDOW_PULSES = 10
-# List of latest timestamps from Encoder.
-# invariant: no. of ENCODER_TIMESTAMPS will never > ENCODER_WINDOW_PULSES
-ENCODER_TIMESTAMPS = []
-# List of times elapsed between latest Encoder pulses.
-# invariant: no. of ENCODER_DELTAS will never > ENCODER_WINDOW_PULSES
-ENCODER_DELTAS = []
-# Most recently recorded encoder speed, in feet per second
-# Updated asyncronously.
-ENCODER_FPS = 0
+ENCODER_WINDOW_PULSES = 20
 # Encoder counts per revolution of the wheel
 ENCODER_PULSES_PER_REV = 4
 # Encoder pulses per linear foot
 # wheel diameter is 7.5", so circumference is pi * 7.5
 ENCODER_PULSES_PER_FOOT = float(ENCODER_PULSES_PER_REV) / (math.pi * (7.5/12.0))
+# Encoder count. Updated asynchronously.
+ENCODER_COUNT = 0.0
+# Graph of encoder speed (timestamp, position)
+ENCODER_GRAPH = []
 
 # initialize the pixels array
 #   return: pixel array
@@ -135,14 +131,12 @@ def pixels_solid(pixels: neopixel.NeoPixel, color: tuple = COLOR_IDLE):
 # encoder init
 def encoder_init():
     global ENCODER_COUNT
-    global ENCODER_TIMESTAMP
-    global ENCODER_FPS
+    global ENCODER_GRAPH
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(ENCODER_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     GPIO.add_event_detect(ENCODER_PIN, GPIO.RISING, callback=encoder_handler)
-    ENCODER_COUNT = 0
-    ENCODER_TIMESTAMP = time.time()
-    ENCODER_FPS = 0
+    ENCODER_COUNT = 0.0
+    ENCODER_GRAPH.append((time.time(), ENCODER_COUNT))
 
 
 # encoder edge event callback
@@ -150,39 +144,9 @@ def encoder_init():
 #   channel: event channel
 def encoder_handler(channel: int):
     global ENCODER_COUNT
-    global ENCODER_WINDOW_PULSES
-    global ENCODER_TIMESTAMPS
-    global ENCODER_DELTAS
-    global ENCODER_FPS
-
-    ENCODER_COUNT = ENCODER_COUNT + 1
-
-    latest_timestamp = time.time()
-
-    # drop old timestamp
-    while len(ENCODER_TIMESTAMPS) >= ENCODER_WINDOW_PULSES:
-        ENCODER_TIMESTAMPS.pop(0)
-
-    # add new timestamp
-    ENCODER_TIMESTAMPS.append(latest_timestamp)
-
-    # create latest delta
-    if len(ENCODER_TIMESTAMPS) >= 2:
-        delta = ENCODER_TIMESTAMPS[-1] - ENCODER_TIMESTAMPS[-2]
-
-        # drop old delta
-        while len(ENCODER_DELTAS) >= ENCODER_WINDOW_PULSES:
-            ENCODER_DELTAS.pop(0)
-    
-        # add new delta
-        ENCODER_DELTAS.append(delta)
-
-    # calculate the average pulses per second over the window
-    if len(ENCODER_DELTAS) > 0:
-        pulses_per_second =  len(ENCODER_DELTAS) / sum(ENCODER_DELTAS)
-        ENCODER_FPS = pulses_per_second / ENCODER_PULSES_PER_FOOT
-    else:
-        ENCODER_FPS = 0
+    global ENCODER_GRAPH
+    ENCODER_COUNT += 1.0
+    ENCODER_GRAPH.append((time.time(), ENCODER_COUNT))
 
 
 # run the web server - blocking method
@@ -230,17 +194,50 @@ def run_web_server(pixels: neopixel.NeoPixel):
             pixels_solid(pixels, COLOR_IDLE)
         elif request.args.get("off"):
             pixels_solid(pixels, (0,0,0))
-        elif request.args.get("speed"):
-            print("Speed = " + str(ENCODER_FPS) + " feet per second")
-            speed_mph = (ENCODER_FPS / 5280.0) * 3600.0
-            print("Speed = " + str(speed_mph) + " mph")
         else:
             # unknown command -- do nothing
             pass
         return ""
     
+    # speed graph endpoint
+    @app.route("/speed")
+    def speed():
+        global ENCODER_GRAPH
+        # trim to graph window by dropping old timestamps
+        while len(ENCODER_GRAPH) > ENCODER_WINDOW_PULSES:
+            ENCODER_GRAPH.pop(0)
+
+        speed_avg_graph = []
+        if len(ENCODER_GRAPH) >= 2:
+            speed_graph = []
+            for index in range(1, len(ENCODER_GRAPH)):
+                # calculate speed
+                delta_position_ft = (ENCODER_GRAPH[index][1] - ENCODER_GRAPH[index-1][1]) / ENCODER_PULSES_PER_FOOT
+                delta_time_s = ENCODER_GRAPH[index][0] - ENCODER_GRAPH[index-1][0]
+                speed_ft_s = delta_position_ft / delta_time_s
+                speed_mph = (speed_ft_s / 5280.0) * 3600.0
+            
+                # calculate speed and append it with timestamp
+                timestamp = datetime.datetime.fromtimestamp(ENCODER_GRAPH[index][0]).strftime("%H:%M:%S.%f")[:-3]
+                speed_graph.append((timestamp, speed_mph))
+
+            # weak implementation of a three-point moving average filter
+            for index in range(0, len(speed_graph)):
+                sum = speed_graph[index][1]
+                count = 1
+                if index >= 1:
+                    sum += speed_graph[index-1][1]
+                    count += 1
+                if index >= 2:
+                    sum += speed_graph[index-2][1]
+                    count += 1
+                speed_avg_graph.append((speed_graph[index][0], sum / float(count)))
+
+        return jsonify(speed_avg_graph)
+    
     app.config['TEMPLATES_AUTO_RELOAD'] = True
     app.run(host="0.0.0.0", port=80)
+
 
 # application entrypoint
 def main():

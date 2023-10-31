@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <title>Pimp my Gimp</title>
 <meta charset="UTF-8">
@@ -27,8 +27,7 @@ body, h1,h2,h3,h4,h5,h6 {
   background-color: maroon;
 }
 .gimp-actions {
-  position: fixed;
-  bottom: 25px;
+  position: relative;
   left: 50%;
   transform: translate(-50%, -50%);
   margin: 0 auto;
@@ -61,6 +60,7 @@ body, h1,h2,h3,h4,h5,h6 {
     }
   }
 </script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body class="bgimg">
 
@@ -71,6 +71,7 @@ body, h1,h2,h3,h4,h5,h6 {
   <header class="w3-container w3-center" style="padding-top: 50px;" id="home">
     <h1 class="w3-xxlarge"><b>Pimp my Gimp</b></h1>
     <p class="w3-xlarge"><b><i>- Glory in Failure -</i></b></p>
+    <p>&nbsp;</p>
   </header>
   <!-- End Header -->
 
@@ -83,7 +84,7 @@ body, h1,h2,h3,h4,h5,h6 {
     <button class="w3-button w3-light-grey w3-section gimp-command-button" onclick="command('cylon')">
       Cylon
     </button>
-    <br />
+    &nbsp;
     <button class="w3-button w3-light-grey w3-section gimp-command-button" onclick="command('alarm')">
       Alarm
     </button>
@@ -91,12 +92,37 @@ body, h1,h2,h3,h4,h5,h6 {
     <button class="w3-button w3-light-grey w3-section gimp-command-button" onclick="command('off')">
       Off
     </button>
-    <br />
-    <button class="w3-button w3-light-grey w3-section gimp-command-button" onclick="command('speed')">
-      Speed
-    </button>
   </div>
   <!-- End Actions Section -->
+
+  <div class="w3-content" id="gimp-speed-graph"></div>
+  <script lanuage="text/javascript">
+    let layout = {
+      title: "Speed",
+      xaxis: { title: "Time" },
+      yaxis: { title: "Speed (mph)" },
+      height: 400,
+      margin: { t: 15, b: 15, l: 15, r: 15},
+      xaxis: { visible: false, showticklabels: false },
+      yaxis: { range: [0.0, 3.0] }
+    };
+
+    // inital empty graph
+    Plotly.newPlot('gimp-speed-graph', [{x: [], y: []}], layout);
+
+    function updateGraph() {
+      fetch('/speed')
+        .then(response => response.json())
+        .then(data => {
+          let times = data.map(point => point[0]);
+          let values = data.map(point => point[1]);
+
+          Plotly.update('gimp-speed-graph', {x: [times], y: [values]});
+        });
+    }
+
+    setInterval(updateGraph, 1000);  // Update every second
+  </script>
 
 <!-- END PAGE CONTENT -->
 </div>
