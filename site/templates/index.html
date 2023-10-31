@@ -98,30 +98,32 @@ body, h1,h2,h3,h4,h5,h6 {
   <div class="w3-content" id="gimp-speed-graph"></div>
   <script lanuage="text/javascript">
     let layout = {
-      title: "Speed",
-      xaxis: { title: "Time" },
+      // title: "Speed",
+      // xaxis: { title: "Time" },
       yaxis: { title: "Speed (mph)" },
-      height: 400,
-      margin: { t: 15, b: 15, l: 15, r: 15},
+      height: 300,
+      margin: { t: 50, b: 50, l: 50, r: 50},
       xaxis: { visible: false, showticklabels: false },
-      yaxis: { range: [0.0, 3.0] }
+      // yaxis: { range: [0.0, 3.0] }
+      showlegend: "False",
+      plot_bgcolor: "#000000",
     };
 
     // inital empty graph
     Plotly.newPlot('gimp-speed-graph', [{x: [], y: []}], layout);
 
-    function updateGraph() {
+    function fetchDataAndRender() {
       fetch('/speed')
         .then(response => response.json())
         .then(data => {
-          let times = data.map(point => point[0]);
-          let values = data.map(point => point[1]);
-
-          Plotly.update('gimp-speed-graph', {x: [times], y: [values]});
+          const graphDiv = document.getElementById('gimp-speed-graph');
+          Plotly.restyle(graphDiv, 'x', [data.data.x]);
+          Plotly.restyle(graphDiv, 'y', [data.data.y]);
         });
     }
 
-    setInterval(updateGraph, 1000);  // Update every second
+    // initial fetch followed by periodic fetching
+    setInterval(fetchDataAndRender, 250);
   </script>
 
 <!-- END PAGE CONTENT -->

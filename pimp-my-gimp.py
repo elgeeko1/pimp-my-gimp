@@ -30,6 +30,11 @@ from flask import Flask, request, render_template
 from flask import send_from_directory  # send raw file
 from flask import jsonify  # graphing
 
+# maths for graphing
+import pandas as pd
+import numpy as np
+from scipy.interpolate import interp1d
+
 # NeoPixel communication over GPIO 18 (pin 12)
 PIXEL_PIN = board.D18
 # NeoPixel total number of NeoPixels in the array
@@ -48,7 +53,7 @@ ENCODER_PULSES_PER_REV = 4
 ENCODER_PULSES_PER_FOOT = float(ENCODER_PULSES_PER_REV) / (math.pi * (7.5/12.0))
 # Encoder count. Updated asynchronously.
 ENCODER_COUNT = 0.0
-# Graph of encoder speed (timestamp, position)
+# Graph of encoder speed (timestamp, position). Updated asynchronously
 ENCODER_GRAPH = []
 
 # initialize the pixels array
@@ -128,6 +133,49 @@ def pixels_solid(pixels: neopixel.NeoPixel, color: tuple = COLOR_IDLE):
     pixels.show()
 
 
+def smooth_timeseries(timestamps: np.array, 
+                      values: np.array, 
+                      window_size: int, 
+                      interp_spacing_s: float) -> list[(float, float)]:
+    """
+    Smooths a given time series data using linear interpolation followed by a moving average filter.
+    
+    Parameters:
+    - timestamps: A numpy array of timestamps (in seconds since epoch time).
+    - values: A numpy array of corresponding values.
+    - window_size: The size of the moving average window, in samples. This determines the smoothing degree.
+    - interp_spacing_s: The spacing in seconds for interpolation. Determines the interval of the resulting timestamps.
+    
+    Returns:
+    - A list of tuples containing smoothed timestamps and their corresponding smoothed data values.
+    
+    Note:
+    - The returned timestamps are interpolated based on the provided interp_spacing_s, and are not the same as the original timestamps.
+    """
+    
+    # Generate new equispaced timestamps based on interp_spacing_s
+    interpolated_timestamps = np.arange(timestamps[0], timestamps[-1], interp_spacing_s)
+
+    # Create a linear interpolation function for the given timestamps and values
+    f = interp1d(timestamps, values, kind='linear', fill_value='extrapolate', bounds_error=False)
+    
+    # Calculate interpolated values for the newly generated equispaced timestamps
+    interpolated_values = f(interpolated_timestamps)
+
+    # Check if interpolated values are available, if not, return an empty list
+    if len(interpolated_values) == 0:
+        return np.array([]), np.array([])
+    
+    # Apply moving average filter on the interpolated values for smoothing
+    smoothed_values = np.convolve(interpolated_values, np.ones(window_size)/window_size, mode='valid')
+    
+    # Adjust the start and end of the timestamps to match the length of smoothed_values due to convolution
+    smoothed_timestamps = interpolated_timestamps[:len(smoothed_values)]
+    
+    # Return the valid timestamps with their corresponding smoothed values as a list of tuples
+    return smoothed_timestamps, smoothed_values
+
+
 # encoder init
 def encoder_init():
     global ENCODER_COUNT
@@ -203,37 +251,39 @@ def run_web_server(pixels: neopixel.NeoPixel):
     @app.route("/speed")
     def speed():
         global ENCODER_GRAPH
+        # if last encoder pulse is more than a second old,
+        # assume zero velocity and append a datapoint to the graph
+        if time.time() - ENCODER_GRAPH[-1][0] > 1.0:
+            ENCODER_GRAPH.append((time.time(), ENCODER_COUNT))
         # trim to graph window by dropping old timestamps
         while len(ENCODER_GRAPH) > ENCODER_WINDOW_PULSES:
             ENCODER_GRAPH.pop(0)
 
-        speed_avg_graph = []
-        if len(ENCODER_GRAPH) >= 2:
-            speed_graph = []
-            for index in range(1, len(ENCODER_GRAPH)):
-                # calculate speed
-                delta_position_ft = (ENCODER_GRAPH[index][1] - ENCODER_GRAPH[index-1][1]) / ENCODER_PULSES_PER_FOOT
-                delta_time_s = ENCODER_GRAPH[index][0] - ENCODER_GRAPH[index-1][0]
-                speed_ft_s = delta_position_ft / delta_time_s
-                speed_mph = (speed_ft_s / 5280.0) * 3600.0
-            
-                # calculate speed and append it with timestamp
-                timestamp = datetime.datetime.fromtimestamp(ENCODER_GRAPH[index][0]).strftime("%H:%M:%S.%f")[:-3]
-                speed_graph.append((timestamp, speed_mph))
+        plotly_data =  {
+            'type': 'scatter',
+            'x': [],
+            'y': [],
+            'mode': 'lines'
+        }
+        # copy volatile array
+        position = np.array(ENCODER_GRAPH)
+        # calculate and smooth the derivative of the encoder position graph
+        if len(position) >= 2:
+            # Calculate the differences in x and y values
+            differences = np.diff(position, axis=0)
 
-            # weak implementation of a three-point moving average filter
-            for index in range(0, len(speed_graph)):
-                sum = speed_graph[index][1]
-                count = 1
-                if index >= 1:
-                    sum += speed_graph[index-1][1]
-                    count += 1
-                if index >= 2:
-                    sum += speed_graph[index-2][1]
-                    count += 1
-                speed_avg_graph.append((speed_graph[index][0], sum / float(count)))
+            # Calculate the derivative using the difference method
+            derivatives = differences[:, 1] / differences[:, 0]
 
-        return jsonify(speed_avg_graph)
+            (x,y) = smooth_timeseries(position[1:,0], derivatives, 2, 0.33)
+            plotly_data =  {
+                'type': 'scatter',
+                'x': x.tolist(),
+                'y': y.tolist(),
+                'mode': 'lines'
+            }
+
+        return jsonify(data = plotly_data)
     
     app.config['TEMPLATES_AUTO_RELOAD'] = True
     app.run(host="0.0.0.0", port=80)
