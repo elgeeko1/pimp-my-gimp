@@ -3,7 +3,7 @@
 >_When Life Gives You Lemons, You Paint That Shit Gold_
 > <br>\- Atmosphere
 
-Pimp out your mobility knee scoter! Trick out your scooter with battery-operated programmable LED underlighting. Powered by Raspberry Pi and Python.
+Pimp out your mobility knee scoter! Trick out your scooter with battery-operated programmable LED underlighting, speakers and real-time speedometer. Powered by Raspberry Pi and Python.
 
 <img src="https://i.imgur.com/owE0TVs.jpg"
     height="250"
@@ -17,12 +17,17 @@ Pimp out your mobility knee scoter! Trick out your scooter with battery-operated
 
 # Features
 Base features:
-1. Programmable LED underlighting
-1. Mobile-friendly web interface
-1. Battery operated
+- Programmable LED underlighting
+- Mobile-friendly web interface
+- Battery operated
 
 Additional optional features:
 - Audio output
+- Odometer / speedometer
+
+# System Diagram
+
+
 
 # Flash Ubuntu Server to your SD card
 Follow the guide [How to install Ubuntu Server on your Raspberry Pi](https://ubuntu.com/tutorials/how-to-install-ubuntu-on-your-raspberry-pi#1-overview) to flash Ubuntu Server to your SD card.
