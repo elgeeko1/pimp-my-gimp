@@ -1,8 +1,0 @@
-# username to use for systemd service
-raspi_user: raspi_user
-
-# host or IP address of the Raspberry Pi
-raspi_host: raspi
-
-# local directory that contains the application source
-gimp_app_local_path: "{{ inventory_dir | dirname }}"

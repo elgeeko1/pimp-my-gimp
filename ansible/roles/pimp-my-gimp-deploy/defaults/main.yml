@@ -1,0 +1,11 @@
+# username to use for ansible and systemd service
+raspi_user: raspi_user
+
+# hostname for the pi target
+raspi_host: raspi
+
+# docker tag to pull for pimp-my-gimp application
+pimp_my_gimp_docker_tag: latest
+
+# app directory
+app_directory: /opt/pimp-my-gimp

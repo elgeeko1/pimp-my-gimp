@@ -1,0 +1,80 @@
+version: '3'
+
+services:
+  influxdb:
+    image: influxdb:latest
+    container_name: influxdb
+    hostname: influxdb
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb-storage:/var/lib/influxdb
+    networks:
+      - pimp-my-gimp
+    env_file:
+      - influx.env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  telegraf:
+    image: telegraf:latest
+    container_name: telegraf
+    hostname: telegraf
+    env_file:
+      - influx.env
+    ports:
+      - "8186:8186"
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    links:
+      - influxdb
+    volumes:
+      - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    networks:
+      - pimp-my-gimp
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    links:
+      - influxdb
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+      - ./grafana/dashboards/pimp-my-gimp.json:/usr/share/grafana/public/dashboards/home.json
+    networks:
+      - pimp-my-gimp
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=strutyourscuff
+      - GF_USERS_ALLOW_SIGN_UP=false
+
+  pimp-my-gimp:
+    image: elgeeko/pimp-my-gimp:latest
+    container_name: pimp-my-gimp
+    hostname: pimp-my-gimp
+    ports:
+      - "80:80"
+    depends_on:
+      - telegraf
+    networks:
+      - pimp-my-gimp
+    privileged: true
+    
+networks:
+  pimp-my-gimp:
+    driver: bridge
+
+volumes:
+  influxdb-storage:
+  grafana-storage:

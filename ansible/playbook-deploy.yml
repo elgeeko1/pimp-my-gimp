@@ -1,0 +1,7 @@
+---
+- name: pimp-my-gimp-deploy
+  hosts: pimp-my-gimp
+  gather_facts: true
+  roles:
+    - name: pimp-my-gimp deploy
+      role: pimp-my-gimp-deploy

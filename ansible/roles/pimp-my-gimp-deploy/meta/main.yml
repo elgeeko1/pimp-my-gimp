@@ -1,7 +1,7 @@
 galaxy_info:
-  role_name: elgeeko1-pimp-my-gimp-ansible
+  role_name: pimp-my-gimp-deploy
   author: elgeeko1
-  description: "Deploy the application Pimp-my-Gimp to a preconfigured Raspberry Pi"
+  description: "Deploy the pimp-my-gimp application to a Raspberry Pi"
   license: MIT
   platforms:
     - name: Ubuntu
