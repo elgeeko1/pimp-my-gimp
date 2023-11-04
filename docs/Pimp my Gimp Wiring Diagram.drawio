@@ -1,0 +1,50 @@
+<mxfile host="app.diagrams.net" modified="2023-10-31T22:31:37.805Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/119.0" etag="FarZak0a40OQ0T9waXzj" version="22.0.8" type="device">
+  <diagram name="Page-1" id="d68FIzcHjwq-1LyTnxd_">
+    <mxGraphModel dx="1875" dy="833" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="PI1F9ZW1r2l59Ygr5PQN-1" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=https://www.raspberrypi.com/documentation/computers/images/GPIO-Pinout-Diagram-2.png;" vertex="1" parent="1">
+          <mxGeometry x="-209.99999999999994" y="370" width="510" height="292.83" as="geometry" />
+        </mxCell>
+        <mxCell id="PI1F9ZW1r2l59Ygr5PQN-2" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=https://m.media-amazon.com/images/I/61sDOHQT0eL._AC_SL1100_.jpg;" vertex="1" parent="1">
+          <mxGeometry x="260" y="70" width="260.76" height="280" as="geometry" />
+        </mxCell>
+        <mxCell id="PI1F9ZW1r2l59Ygr5PQN-3" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=https://m.media-amazon.com/images/I/61ru-jFrxyL._SL1500_.jpg;clipPath=inset(18% 13.33% 42% 25.33%);" vertex="1" parent="1">
+          <mxGeometry x="300" y="460" width="214.68" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="PI1F9ZW1r2l59Ygr5PQN-4" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=https://m.media-amazon.com/images/I/61ru-jFrxyL._SL1500_.jpg;clipPath=inset(18% 73.67% 0% 2.67%);" vertex="1" parent="1">
+          <mxGeometry x="550" y="360" width="40.4" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="PI1F9ZW1r2l59Ygr5PQN-5" value="" style="endArrow=none;html=1;rounded=0;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=5;entryX=0.557;entryY=0.286;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.843;exitY=0.137;exitDx=0;exitDy=0;exitPerimeter=0;shadow=1;" edge="1" parent="1" source="PI1F9ZW1r2l59Ygr5PQN-1" target="PI1F9ZW1r2l59Ygr5PQN-3">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="230" y="420" as="sourcePoint" />
+            <mxPoint x="420" y="340" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="420" y="410" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="PI1F9ZW1r2l59Ygr5PQN-7" value="+5V (rpi pin 2)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="PI1F9ZW1r2l59Ygr5PQN-5">
+          <mxGeometry x="-0.2481" y="5" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="PI1F9ZW1r2l59Ygr5PQN-6" value="" style="endArrow=none;html=1;rounded=0;strokeWidth=5;entryX=0.419;entryY=0.357;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.843;exitY=0.222;exitDx=0;exitDy=0;exitPerimeter=0;strokeColor=#FFFFFF;shadow=1;" edge="1" parent="1" source="PI1F9ZW1r2l59Ygr5PQN-1" target="PI1F9ZW1r2l59Ygr5PQN-3">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="230" y="440" as="sourcePoint" />
+            <mxPoint x="420.30695652173927" y="460" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="390" y="435" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="PI1F9ZW1r2l59Ygr5PQN-8" value="GND (rpi pin 6)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="PI1F9ZW1r2l59Ygr5PQN-6">
+          <mxGeometry x="-0.0772" y="-3" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
