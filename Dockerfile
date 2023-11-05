@@ -26,7 +26,11 @@ RUN apt-get install --no-install-recommends -y -q ca-certificates
 RUN apt-get install --no-install-recommends -y -q i2c-tools
 RUN apt-get install --no-install-recommends -y -q libgpiod-dev
 RUN apt-get install --no-install-recommends -y -q rpi.gpio-common
-RUN apt-get install --no-install-recommends -y -q ffmpeg
+RUN apt-get install --no-install-recommends -y -q ffmpeg libavcodec-extra
+
+# configure alsa (use device 1)
+RUN echo "defaults.pcm.card 1" > /etc/asound.conf
+RUN echo "defaults.ctl.card 1" >> /etc/asound.conf
 
 # apt cleanup
 RUN apt-get autoremove -y -q

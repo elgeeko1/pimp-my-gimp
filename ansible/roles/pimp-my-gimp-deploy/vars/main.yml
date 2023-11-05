@@ -1,3 +1,0 @@
----
-# local directory that contains the application source
-app_local_path: "{{ inventory_dir | dirname }}/app"

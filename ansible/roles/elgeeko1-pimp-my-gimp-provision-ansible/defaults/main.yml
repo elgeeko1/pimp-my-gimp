@@ -1,5 +1,0 @@
-# username to use for ansible and systemd service
-raspi_user: raspi_user
-
-# hostname for the pi target
-raspi_host: raspi

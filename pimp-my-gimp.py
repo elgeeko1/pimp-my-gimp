@@ -277,10 +277,10 @@ def run_web_server(pixels: neopixel.NeoPixel):
     @app.route("/speed")
     def speed():
         global ENCODER_GRAPH
-        # if last encoder pulse is more than a second old,
-        # assume zero velocity and append a datapoint to the graph
-        if time.time() - ENCODER_GRAPH[-1][0] > 1.0:
-            ENCODER_GRAPH.append((time.time(), ENCODER_COUNT))
+        # if last encoder pulse is more than two seconds old,
+        # assume zero velocity and append a datapoint to the graph one second back
+        if time.time() - ENCODER_GRAPH[-1][0] > 2.0:
+            ENCODER_GRAPH.append((time.time() - 1.0, ENCODER_COUNT))
         # trim to graph window by dropping old timestamps
         while len(ENCODER_GRAPH) > ENCODER_WINDOW_PULSES:
             ENCODER_GRAPH.pop(0)
