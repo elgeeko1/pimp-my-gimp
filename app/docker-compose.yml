@@ -81,6 +81,12 @@ services:
       - telegraf
     links:
       - telegraf
+    cap_add:
+      - SYS_RAWIO
+    devices:
+      - /dev/snd:/dev/snd
+      - /dev/mem:/dev/mem
+      - /dev/gpiomem:/dev/gpiomem
     privileged: true
     deploy:
       restart_policy:
