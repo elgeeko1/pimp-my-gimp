@@ -8,10 +8,12 @@
 #########
 
 # system libraries
+import threading
 import time
 import sys
 import os
 import math
+from typing import Callable
 
 # adafruit circuitpython libraries
 import board
@@ -34,9 +36,30 @@ import numpy
 
 # telegraf
 import requests
+from requests_futures.sessions import FuturesSession
 import urllib3
 
-import numpy
+# NeoPixel communication over GPIO 18 (pin 12)
+PIXEL_PIN = board.D18
+# NeoPixel total number of NeoPixels in the array
+PIXEL_COUNT = 163
+# NeoPixel idle color
+COLOR_IDLE = (0, 64, 64)
+
+# Encoder GPIO pin
+ENCODER_PIN = 12  # GPIO 12 / pin 32
+# Encoder window length to remember, in unit of Encoder pulses.
+ENCODER_WINDOW_PULSES = 20
+# Encoder counts per revolution of the wheel
+ENCODER_PULSES_PER_REV = 4
+# Encoder pulses per linear foot
+# wheel diameter is 7.5", so circumference is pi * 7.5
+ENCODER_PULSES_PER_FOOT = float(ENCODER_PULSES_PER_REV) / (math.pi * (7.5/12.0))
+# Encoder speed smoothing coefficient (for exponential moving average)
+ENCODER_SMOOTHING = 0.75
+
+# Define the URL for the HTTP listener of Telegraf
+TELEGRAPH_URL = "http://telegraf:8186/telegraf"
 
 class TimeStampedCircularBuffer:
     """
@@ -126,12 +149,17 @@ class Trajectory:
     and applies exponential smoothing to the speed data to reduce noise and variability in the measurements.
     """
 
-    def __init__(self, window_size: int, alpha: float = 0.5):
+    def __init__(
+            self,
+            window_size: int,
+            alpha: float = 0.5,
+            step_callback: Callable[[float, float, float], None] = lambda timestamp, position, speed : None):
         """
         Initializes the Trajectory with a specified window size for the buffers and a smoothing factor for speed calculation.
 
         :param window_size: The maximum number of entries for the position and speed graphs.
         :param alpha: The smoothing factor used for exponential smoothing of the speed data.
+        :param step_callback: Callback to execute on every trajectory step.
         """
         self._last_timestamp = time.time()  # Stores the timestamp of the last update
         self._last_position = 0.0  # Stores the last calculated position
@@ -139,6 +167,7 @@ class Trajectory:
         self._position_graph = TimeStampedCircularBuffer(window_size)  # Circular buffer for position data
         self._speed_graph = TimeStampedCircularBuffer(window_size)  # Circular buffer for speed data
         self._speed_filter = ExponentialSmoothing(alpha)  # Exponential smoothing filter for speed
+        self._step_callback = step_callback
 
     def step(self, step_pulses: float = 1.0, offset_s: float = 0.0):
         """
@@ -156,6 +185,7 @@ class Trajectory:
         self._last_timestamp = timestamp
         self._last_position = new_position
         self._last_speed = new_speed
+        self._step_callback(timestamp, new_position, new_speed)
 
     def position(self) -> (float, float):
         """
@@ -188,29 +218,7 @@ class Trajectory:
         :return: A numpy array of timestamped speed entries.
         """
         return self._speed_graph.values()
-    
 
-# NeoPixel communication over GPIO 18 (pin 12)
-PIXEL_PIN = board.D18
-# NeoPixel total number of NeoPixels in the array
-PIXEL_COUNT = 163
-# NeoPixel idle color
-COLOR_IDLE = (0, 64, 64)
-
-# Encoder GPIO pin
-ENCODER_PIN = 12  # GPIO 12 / pin 32
-# Encoder window length to remember, in unit of Encoder pulses.
-ENCODER_WINDOW_PULSES = 20
-# Encoder counts per revolution of the wheel
-ENCODER_PULSES_PER_REV = 4
-# Encoder pulses per linear foot
-# wheel diameter is 7.5", so circumference is pi * 7.5
-ENCODER_PULSES_PER_FOOT = float(ENCODER_PULSES_PER_REV) / (math.pi * (7.5/12.0))
-# Encoder speed smoothing coefficient (for exponential moving average)
-ENCODER_SMOOTHING = 0.75
-
-# position traveled, in encoder pulses
-trajectory = Trajectory(ENCODER_WINDOW_PULSES, ENCODER_SMOOTHING)
 
 # initialize the pixels array
 #   return: pixel array
@@ -302,30 +310,36 @@ def encoder_init():
 def encoder_handler(channel: int):
     global trajectory
     trajectory.step(1.0)
-    # send_data_to_telegraf("distance_ft", (timestamp, 1.0 / ENCODER_PULSES_PER_FOOT))
 
+# executes periodically to determine of speed is zero, and adds zero points
+# to the trajectory
+def encoder_check_speed():
+    global trajectory
+    # if last encoder pulse was seen more than stopped_threshold_s seconds ago,
+    # assume zero spee and append a zero step to the encoder graph.
+    # introduce latency of stopped_threshold_s / 2 to account for encoder pulses
+    # that may arrive soon, resulting in artificially large reported speeds
+    stopped_threshold_s = 1.0
+    while True:
+        timestamp, _ = trajectory.speed()
+        if time.time() - timestamp > stopped_threshold_s:
+            trajectory.step(0.0, -(stopped_threshold_s / 2.0))
+        time.sleep(stopped_threshold_s)
 
-def send_data_to_telegraf(series: str, datapoint):
-    # Extract timestamp and value from the datapoint tuple
-    timestamp, value = datapoint
-    
+def telegraf_post_datapoint(timestamp: float, position: float, speed: float) -> None:
+    global telegraf_session
+
     # Convert the timestamp to nanoseconds
     timestamp_ns = int(timestamp * 1e9)
     
-    # Define the URL for the HTTP listener of Telegraf
-    url = "http://telegraf:8186/telegraf"
-    
-    # Data in InfluxDB line protocol format
-    # Example: "measurement,tag_key=tag_value field_key=field_value timestamp"
-    data = f"{series} value={value} {timestamp_ns}"
-    
-    try:
-        response = requests.post(url, data=data, headers={'Content-Type': 'application/x-www-form-urlencoded'})
-    except urllib3.exceptions.NewConnectionError:
-        pass
-    except requests.exceptions.RequestException:
-        pass
-
+    telegraf_session.post(
+        TELEGRAPH_URL,
+        data = f"distance_ft value={position / ENCODER_PULSES_PER_FOOT} {timestamp_ns}",
+        headers = {'Content-Type': 'application/x-www-form-urlencoded'})
+    telegraf_session.post(
+        TELEGRAPH_URL,
+        data = f"speed_ft_s value={speed / ENCODER_PULSES_PER_FOOT} {timestamp_ns}",
+        headers = {'Content-Type': 'application/x-www-form-urlencoded'})
 
 # run the web server - blocking method
 #   pixels: initialized pixel array
@@ -381,16 +395,6 @@ def run_web_server(pixels: neopixel.NeoPixel):
     @app.route("/speed")
     def speed():
         global trajectory
-
-        # if last encoder pulse was seen more than two seconds ago, assume zero speed
-        # append a zero step to the encoder graph one second ago
-        # the one-second latency for adding zero values prevents artifacts should
-        # an encoder pulse come in near the current time
-        stopped_threshold_s = 1.0
-        timestamp, speed = trajectory.speed()
-        if time.time() - timestamp > stopped_threshold_s:
-            trajectory.step(0.0, - stopped_threshold_s / 2)
-
         speed_graph = trajectory.speeds()
         plotly_data =  {
             'type': 'scatter',
@@ -398,22 +402,31 @@ def run_web_server(pixels: neopixel.NeoPixel):
             'y': speed_graph[:, 1].tolist() if len(speed_graph) else [],
             'mode': 'lines'
         }
-
         return jsonify(data = plotly_data)
     
     app.config['TEMPLATES_AUTO_RELOAD'] = True
     app.run(host="0.0.0.0", port=80)
 
 
+# global variables
+trajectory = Trajectory(ENCODER_WINDOW_PULSES, ENCODER_SMOOTHING, telegraf_post_datapoint)
+telegraf_session = FuturesSession()
+
 # application entrypoint
 def main():
     pixels = pixels_init()
     rcode = 1
+
     try:
         print("Application starting")
         pixels_display_hello(pixels)
         pixels_solid(pixels)
+
         encoder_init()
+        encoder_check_speed_thread = threading.Thread(target=encoder_check_speed)
+        encoder_check_speed_thread.daemon = True
+        encoder_check_speed_thread.start()
+
         run_web_server(pixels)
         rcode = 0
     finally:

@@ -79,7 +79,7 @@
               }
             ]
           },
-          "unit": "velocitymph"
+          "unit": "ft/s"
         },
         "overrides": []
       },
@@ -109,11 +109,11 @@
             "type": "influxdb",
             "uid": "PA9C3EE804950D1FE"
           },
-          "query": "from(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"distance_ft\")\n  |> aggregateWindow(every: v.windowPeriod, fn: sum)\n  |> cumulativeSum()\n  |> derivative()\n  |> yield(name: \"distance_ft\")\n  ",
+          "query": "from(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"speed_ft_s\")\n  |> yield(name: \"speed_ft_s\")\n  ",
           "refId": "A"
         }
       ],
-      "title": "Velocity",
+      "title": "Speed",
       "transparent": true,
       "type": "timeseries"
     },
@@ -174,7 +174,7 @@
             "type": "influxdb",
             "uid": "PA9C3EE804950D1FE"
           },
-          "query": "from(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"distance_ft\")\n  |> aggregateWindow(every: v.windowPeriod, fn: sum)\n  |> cumulativeSum()\n  |> yield(name: \"distance_ft\")",
+          "query": "from(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"distance_ft\")\n  |> yield(name: \"distance_ft\")",
           "refId": "A"
         }
       ],
