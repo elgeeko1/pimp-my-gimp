@@ -1,0 +1,16 @@
+apiVersion: 1
+
+datasources:
+  - name: InfluxDB  Flux
+    type: influxdb
+    url: http://influxdb:8086
+    access: proxy
+    editable: true
+    isDefault: true
+    secureJsonData:
+      token: "strutyourscruff"
+    jsonData:
+      version: Flux
+      organization: "pimp-my-gimp"
+      defaultBucket: influx
+      timeInterval: 10s

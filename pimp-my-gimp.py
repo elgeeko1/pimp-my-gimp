@@ -9,7 +9,6 @@
 
 # system libraries
 import time
-import datetime
 import sys
 import os
 import math
@@ -31,9 +30,12 @@ from flask import send_from_directory  # send raw file
 from flask import jsonify  # graphing
 
 # maths for graphing
-import pandas as pd
 import numpy as np
 from scipy.interpolate import interp1d
+
+# telegraf
+import requests
+import urllib3
 
 # NeoPixel communication over GPIO 18 (pin 12)
 PIXEL_PIN = board.D18
@@ -194,7 +196,31 @@ def encoder_handler(channel: int):
     global ENCODER_COUNT
     global ENCODER_GRAPH
     ENCODER_COUNT += 1.0
-    ENCODER_GRAPH.append((time.time(), ENCODER_COUNT))
+    timestamp = time.time()
+    ENCODER_GRAPH.append((timestamp, ENCODER_COUNT))
+    send_data_to_telegraf("distance_ft", (timestamp, 1.0 / ENCODER_PULSES_PER_FOOT))
+
+
+def send_data_to_telegraf(series: str, datapoint):
+    # Extract timestamp and value from the datapoint tuple
+    timestamp, value = datapoint
+    
+    # Convert the timestamp to nanoseconds
+    timestamp_ns = int(timestamp * 1e9)
+    
+    # Define the URL for the HTTP listener of Telegraf
+    url = "http://telegraf:8186/telegraf"
+    
+    # Data in InfluxDB line protocol format
+    # Example: "measurement,tag_key=tag_value field_key=field_value timestamp"
+    data = f"{series} value={value} {timestamp_ns}"
+    
+    try:
+        response = requests.post(url, data=data, headers={'Content-Type': 'application/x-www-form-urlencoded'})
+    except urllib3.exceptions.NewConnectionError:
+        pass
+    except requests.exceptions.RequestException:
+        pass
 
 
 # run the web server - blocking method
@@ -251,10 +277,10 @@ def run_web_server(pixels: neopixel.NeoPixel):
     @app.route("/speed")
     def speed():
         global ENCODER_GRAPH
-        # if last encoder pulse is more than a second old,
-        # assume zero velocity and append a datapoint to the graph
-        if time.time() - ENCODER_GRAPH[-1][0] > 1.0:
-            ENCODER_GRAPH.append((time.time(), ENCODER_COUNT))
+        # if last encoder pulse is more than two seconds old,
+        # assume zero velocity and append a datapoint to the graph one second back
+        if time.time() - ENCODER_GRAPH[-1][0] > 2.0:
+            ENCODER_GRAPH.append((time.time() - 1.0, ENCODER_COUNT))
         # trim to graph window by dropping old timestamps
         while len(ENCODER_GRAPH) > ENCODER_WINDOW_PULSES:
             ENCODER_GRAPH.pop(0)

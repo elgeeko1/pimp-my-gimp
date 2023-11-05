@@ -1,7 +1,0 @@
----
-- name: pimp-my-gimp
-  hosts: scoot
-  gather_facts: false
-  roles:
-    - name: Scoot
-      role: elgeeko1-pimp-my-gimp-deploy-ansible

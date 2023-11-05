@@ -1,7 +1,0 @@
----
-- name: scoot-provision
-  hosts: scoot
-  gather_facts: true
-  roles:
-    - name: Scoot
-      role: elgeeko1-pimp-my-gimp-provision-ansible

@@ -1,7 +1,0 @@
----
-- name: factory-init
-  hosts: raspi-factory
-  gather_facts: true
-  roles:
-    - name: factory raspi init
-      role: elgeeko1-raspi-init-ansible
