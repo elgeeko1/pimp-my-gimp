@@ -1,0 +1,141 @@
+/* Reset some default styling */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Apply a smooth font throughout the website */
+body {
+    font-family: 'Arial Rounded MT Bold', sans-serif;
+    background: linear-gradient(45deg, #333, #555);
+    color: #dcdcdc;
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+    height: 100vh; /* Full viewport height */
+}
+
+/* Container for centered content */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+/* Style the header with more modern colors and spacing */
+header {
+    background: #ffffff;
+    padding: 1px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    background: linear-gradient(to right, 
+                                        #9db4ff, /* Light blue */
+                                        #b6fbff, /* Very light blue */
+                                        #9db4ff  /* Light blue */
+                                        );
+    display: inline-block; /* Apply the gradient only to the text area */
+    margin: 0px; /* Space around the title */
+    border-radius: 10px; /* Rounded corners for the title */
+    width: 100%;
+}
+
+header h1 {
+    color: #007bff;
+    font-size: 3em;
+}
+
+.bling-title {
+    font-family: 'Permanent Marker', cursive;
+    color: #FFD700; /* Gold color for bling */
+    text-shadow:
+        0 0 6px #565656, /* White glow */
+        0 0 10px #FFF, /* White glow */
+        0 0 12px #FFD700, /* Gold glow */
+        0 0 2px #000, /* Dark outline */
+        0 0 4px #000; /* Dark outline */
+    animation: shine 3s forwards infinite;
+}
+
+/* Keyframes for a shine effect */
+@keyframes shine {
+    0% { color: #ffd900; }
+    50% { color: #cfcf0085; }
+    100% { color: #FFD700; }
+}
+
+header h2 {
+    color: #6c757d;
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+    text-transform: lowercase;
+}
+
+/* Container for icons with a subtle shadow for depth */
+.icon-container {
+    display: flex;
+    flex-wrap: wrap; /* Allows items to wrap */
+    justify-content: center; /* Centers items horizontally */
+    align-items: center; /* Aligns items vertically */
+    margin-top: 10px;  /* Adds some space at the top of the container */
+    margin-bottom: 10px; /* Adds some space at the bottom of the container */
+    padding: 10px;
+    gap: 10px; /* Provides more space between icons */
+    background: #333; /* White background to make icons pop */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+    border-radius: 8px; /* Rounded corners for the container */
+}
+
+/* Style for icon buttons with a smooth transition */
+.icon-button {
+    width: 128px; /* Set a fixed width */
+    height: 128px; /* Set a fixed height */
+    display: flex; /* Use flex to center the image inside the button */
+    justify-content: center;
+    align-items: center;
+    background-color: #e0e1e7; /* Light color for the button background */
+    border-radius: 8px; /* Rounded corners for buttons */
+    cursor: pointer; /* Cursor pointer to indicate clickable items */
+    transition: transform 0.3s ease, box-shadow 0.3s ease; /* Smooth transition for hover effects */
+    margin-bottom: 10px;
+}
+
+/* Hover effect for icon buttons */
+.icon-button:disabled {
+    transform: translateY(-5px); /* Slightly raise the button on hover */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Larger shadow on hover for a 'lifting' effect */
+    filter: invert(100%); /* Invert colors on hover */
+}
+
+.icon-button img {
+    max-width: 95%; /* Slightly smaller images to fit nicely within the button */
+    max-height: 95%;
+    transition: filter 0.3s ease; /* Smooth transition for the filter effect */
+}
+
+/* Large and readable speed display */
+.metrics-display {
+    font-size: 1.5rem;
+    color: #888;
+    vertical-align: middle;
+    margin-bottom: 10px;
+}
+
+/* Position the footer image and give it some spacing */
+footer {
+    width: 100%;
+    padding: 10px 0;
+    background-color: #333;
+    box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+}
+
+/* Responsive design for mobile devices */
+@media only screen and (max-width: 768px) {
+    .icon-container {
+        justify-content: space-around; /* Adjust icon spacing on smaller screens */
+    }
+
+    .icon-button {
+        width: 72px; /* Smaller buttons on mobile for better fit */
+        height: 72px;
+    }
+}

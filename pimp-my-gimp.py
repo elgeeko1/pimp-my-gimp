@@ -113,14 +113,16 @@ class ExponentialSmoothing:
     """
     Exponential smoothing algorithm for time series data.
     """
-    def __init__(self, alpha: float = 0.5):
+    def __init__(self, alpha: float = 0.5, zero_floor = -math.inf):
         """
         Initializes the exponential smoothing filter.
 
         :param alpha: The smoothing factor, a value between 0 and 1.
+        :param zero_floor: Threshold below which the smoothed value should saturate to zero
         """
         self._alpha = alpha
         self._last_smoothed = None
+        self._zero_floor = zero_floor
 
     def smooth(self, value: float) -> float:
         """
@@ -133,6 +135,8 @@ class ExponentialSmoothing:
             self._last_smoothed = value
         else:
             self._last_smoothed = self._alpha * value + (1 - self._alpha) * self._last_smoothed
+            if value < self._zero_floor:
+                self._last_smoothed = 0.0
 
         return self._last_smoothed
     
@@ -163,7 +167,7 @@ class Trajectory:
         self._last_speed = 0.0  # Stores the last calculated speed
         self._position_graph = TimeStampedCircularBuffer(window_size)  # Circular buffer for position data
         self._speed_graph = TimeStampedCircularBuffer(window_size)  # Circular buffer for speed data
-        self._speed_filter = ExponentialSmoothing(alpha)  # Exponential smoothing filter for speed
+        self._speed_filter = ExponentialSmoothing(alpha, 0.1)  # Exponential smoothing filter for speed
         self._step_callbacks = []
         
     def register_callback(self, callback: Callable[[float, float, float], None]):
@@ -271,6 +275,9 @@ def pixels_cylon(pixels: neopixel.NeoPixel, count:int = 1):
                     pixels[pixel] = pixels[pixel+1]
                 pixels[PIXEL_COUNT-1] = last_pixel
                 pixels.show()
+                time.sleep(0.005)
+
+            time.sleep(0.050) # give the CPU a break between colors
 
     pixels_solid(pixels, (0,0,0))
 
@@ -327,7 +334,7 @@ def encoder_check_speed():
     # assume zero spee and append a zero step to the encoder graph.
     # introduce latency of stopped_threshold_s / 2 to account for encoder pulses
     # that may arrive soon, resulting in artificially large reported speeds
-    stopped_threshold_s = 0.5
+    stopped_threshold_s = 1.0
     while True:
         timestamp, _ = trajectory.speed()
         if time.time() - timestamp > stopped_threshold_s:
@@ -366,7 +373,15 @@ def run_web_server(pixels: neopixel.NeoPixel):
 
     # read first milliseconds from alert sound
     # the range of acoustic interest is determined empirically
-    alarm_sound = AudioSegment.from_mp3("static/sounds/red-alert.mp3")[100:1250]
+    sound_meltdown = AudioSegment.from_mp3("static/sounds/meltdown.mp3")[100:1250]
+
+    # stayin' alive
+    # the range of acoustic interest is determined empirically
+    sound_disco = AudioSegment.from_mp3("static/sounds/disco.mp3")[5000:9500]
+
+    # low rider
+    # the range of acoustic interest is determined empirically
+    sound_underlight = AudioSegment.from_mp3("static/sounds/underlight.mp3")[250:6000]
 
     # return index page
     @app.route("/")
@@ -386,40 +401,44 @@ def run_web_server(pixels: neopixel.NeoPixel):
             os.path.join(app.root_path, 'static'),
             'manifest.json',)
     
-    # command endpoint: route argument to command
-    @app.route("/command")
-    def command():
-        if request.args.get("strobe"):
-            pixels_strobe(pixels)
-            pixels_solid(pixels, COLOR_IDLE)
-        elif request.args.get("cylon"):
-            pixels_cylon(pixels)
-            pixels_solid(pixels, COLOR_IDLE)
-        elif request.args.get("alarm"):
-            for count in range(4):
-                pixels_flash(pixels, (255,255,255), 2)
-                pixels_flash(pixels, (255,0,0), 1)
-                play(alarm_sound)
-            pixels_solid(pixels, COLOR_IDLE)
-        elif request.args.get("off"):
-            pixels_solid(pixels, (0,0,0))
-        else:
-            # unknown command -- do nothing
-            pass
+    # disco party!
+    @app.route("/disco")
+    def disco():
+        thread = threading.Thread(target = lambda: play(sound_disco), daemon = True)
+        thread.start()
+        pixels_strobe(pixels)
+        pixels_solid(pixels, COLOR_IDLE)
+        thread.join()
+        return ""
+
+    # underlight cylon effect
+    @app.route("/underlight")
+    def underlight():
+        thread = threading.Thread(target = lambda: play(sound_underlight), daemon = True)
+        thread.start()
+        pixels_cylon(pixels)
+        pixels_solid(pixels, COLOR_IDLE)
+        thread.join()
         return ""
     
-    # speed graph endpoint
-    @app.route("/speed")
-    def speed():
-        global trajectory
-        speed_graph = trajectory.speeds()
-        plotly_data =  {
-            'type': 'scatter',
-            'x': speed_graph[:, 0].tolist() if len(speed_graph) else [],
-            'y': speed_graph[:, 1].tolist() if len(speed_graph) else [],
-            'mode': 'lines'
-        }
-        return jsonify(data = plotly_data)
+    # meltdown effect
+    @app.route("/meltdown")
+    def meltdown():
+        for count in range(4):
+            thread = threading.Thread(target = lambda: play(sound_meltdown), daemon = True)
+            thread.start()
+            pixels_flash(pixels, (255,255,255), 2)
+            pixels_flash(pixels, (255,0,0), 1)
+            thread.join()
+        pixels_solid(pixels, COLOR_IDLE)
+        thread.join()
+        return ""
+    
+    # lights-out
+    @app.route("/lights-out")
+    def lights_out():
+        pixels_solid(pixels, (0,0,0))
+        return ""
     
     @socketio.on('connect', namespace='/trajectory')
     def trajetory_connect():

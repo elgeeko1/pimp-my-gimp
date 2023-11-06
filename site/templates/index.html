@@ -1,159 +1,143 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<title>Pimp my Gimp</title>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-eval' 'unsafe-inline' data: filesystem: about: blob: ws: wss:">
-<link rel="manifest" href="/manifest.json">
-<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-<style>
-body, h1,h2,h3,h4,h5,h6 {
-  font-family: "Montserrat", sans-serif;
-  text-shadow: 1px 1px 0px grey;
-}
-.w3-row-padding img {margin-bottom: 12px}
-.bgimg {
-  background-position: center top;
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-image: url('static/images/pin.png');
-  background-color: black;
-  min-height: 100%;
-}
-.gimp-command-button {
-  border: 3px solid navy;
-  background-color: maroon;
-}
-.gimp-actions {
-  position: relative;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  margin: 0 auto;
-  text-align: center;
-}
-</style>
-<script type=text/javascript>
-  // issue an HTTP GET request to send a command to the target
-  function command(arg){
-    var command_url = window.location.protocol + "//" + window.location.host + window.location.pathname;
-    command_url = command_url.substring(0, command_url.lastIndexOf('/')) + "/";
-    command_url += "command?" + arg + "=true";
-    xhr = new XMLHttpRequest();
-    xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4) {
-          enable_command_buttons(true);
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-eval' 'unsafe-inline' data: filesystem: about: blob: ws: wss:">
+    <title>Pimp-my-Gimp</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="static/styles/styles.css">
+
+    <!-- chart.js includes -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
+
+    <!-- button actions -->
+    <script type=text/javascript>
+        // issue an HTTP GET request to send a command to the target
+        function pimpcommand(arg){
+            var command_url = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            command_url = command_url.substring(0, command_url.lastIndexOf('/')) + "/";
+            command_url += arg;
+            xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    enable_command_buttons(true);
+                }
+            }
+            xhr.open('get', command_url, true);
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+            xhr.send();
+            enable_command_buttons(false);
         }
-    }
-    xhr.open('get', command_url, true);
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
-    xhr.send();
-    enable_command_buttons(false);
-  }
-  function enable_command_buttons(enable = true){
-    const buttons = document.getElementsByTagName("button");
-    for (const button of buttons) {
-      if(button.classList.contains("gimp-command-button")){
-        button.disabled = !enable;
-      }
-    }
-  }
-</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
+
+        function enable_command_buttons(enable = true){
+            const buttons = document.getElementsByClassName("icon-button");
+            for (const button of buttons) {
+                button.disabled = !enable;
+            }
+        }
+      </script>
 </head>
-<body class="bgimg">
+<body>
+    <div class="container">
+        <header>
+            <h1 class="bling-title">Pimp-my-Gimp</h1>
+            <h2>Glory in Failure</h2>
+        </header>
+        
+        <!-- buttons -->
+        <div class="icon-container">
+            <button class="icon-button"><img src="static/images/button-underlight.png" alt="underlight" onclick="pimpcommand('underlight')"></button>
+            <button class="icon-button"><img src="static/images/button-disco.png" alt="disco" onclick="pimpcommand('disco')"></button>
+            <button class="icon-button"><img src="static/images/button-meltdown.png" alt="meltdown" onclick="pimpcommand('meltdown')"></button>
+            <button class="icon-button"><img src="static/images/button-lights-out.png" alt="lights out" onclick="pimpcommand('lights-out')"></button>
+        </div>
 
-<!-- Page Content -->
-<div class="w3-main">
+        <!-- distance -->
+        <div class="metrics-display">
+            <p>Distance: <span id="distance-value">0</span> ft
+                <br/>Speed: <span id="speed-value">0</span> ft/s</p>
+        </div>
 
-  <!-- Header -->
-  <header class="w3-container w3-center" style="padding-top: 50px;" id="home">
-    <h1 class="w3-xxlarge"><b>Pimp my Gimp</b></h1>
-    <p class="w3-xlarge"><b><i>- Glory in Failure -</i></b></p>
-    <p>&nbsp;</p>
-  </header>
-  <!-- End Header -->
+        <!-- speed graph -->
+        <footer>
+            <div style="height: 200px; width: 100%;">
+                <canvas id="speedChart" width="90%"></canvas>
+            </div>
+        </footer>
 
-  <!-- Actions Section -->
-  <div class="w3-content gimp-actions" id="actions">
-    <button class="w3-button w3-light-grey w3-section gimp-command-button" onclick="command('strobe')">
-      Strobe
-    </button>
-    &nbsp;
-    <button class="w3-button w3-light-grey w3-section gimp-command-button" onclick="command('cylon')">
-      Cylon
-    </button>
-    &nbsp;
-    <button class="w3-button w3-light-grey w3-section gimp-command-button" onclick="command('alarm')">
-      Alarm
-    </button>
-    &nbsp;
-    <button class="w3-button w3-light-grey w3-section gimp-command-button" onclick="command('off')">
-      Off
-    </button>
-  </div>
-  <!-- End Actions Section -->
+        <!-- dynamic content -->
+        <script type=text/javascript>
+            var socket = io.connect('http://' + document.domain + ':' + location.port + '/trajectory');
+            var speedCtx = document.getElementById('speedChart').getContext('2d');
+            var timeWindow = 10;  // time window to show, in s
+      
+            var speedChart = new Chart(speedCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Speed',
+                        data: []
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    lineTension: 0.3,
+                    elements: {
+                        point:{
+                            radius: 0
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: "time",
+                            display: false,
+                            min:  Date.now() - (timeWindow * 1000),
+                            max:  Date.now(),
+                            grid: {
+                              display: false
+                            },
+                        },
+                        y: {
+                            min: 0,
+                            // suggestedMax: 3,
+                            grid: {
+                              display: false,
+                            },
+                        }
+                    }
+                }
+            });
+      
+            socket.on('newdata', function(msg) {
+                // console.log("Received", msg);
 
-  <!-- Trajectory Section -->
-  <div class="w3-content" style="width: 100%; height: 200px;">
-    <canvas id="speedChart"></canvas>
-  </div>
-  <script>
-      var socket = io.connect('http://' + document.domain + ':' + location.port + '/trajectory');
-      var speedCtx = document.getElementById('speedChart').getContext('2d');
-      var timeWindow = 10;  // time window to show, in s
+                // Update speed chart
+                speedChart.data.labels.push(msg.timestamp);
+                speedChart.data.datasets.forEach((dataset) => {
+                    dataset.data.push(msg.speed);
+                });
+                speedChart.update();
+                speedChart.options.scales.x.min = Date.now() - (timeWindow * 1000);
+                speedChart.options.scales.x.max = Date.now();
 
-      var speedChart = new Chart(speedCtx, {
-          type: 'line',
-          data: {
-              labels: [],
-              datasets: [{
-                  label: 'Speed',
-                  data: []
-              }]
-          },
-          options: {
-              scales: {
-                  x: {
-                      type: "time",
-                      display: false,
-                      min:  Date.now() - (timeWindow * 1000),
-                      max:  Date.now(),
-                      grid: {
-                        display: false
-                      },
-                  },
-                  y: {
-                      min: 0,
-                      suggestedMax: 3,
-                      grid: {
-                        display: false,
-                      },
-                  }
-              }
-          }
-      });
-
-      socket.on('newdata', function(msg) {
-          // console.log("Received", msg);
-          // Update speed chart
-          speedChart.data.labels.push(msg.timestamp);
-          speedChart.data.datasets.forEach((dataset) => {
-              dataset.data.push(msg.speed);
-          });
-          speedChart.update();
-          speedChart.options.scales.x.min = Date.now() - (timeWindow * 1000);
-          speedChart.options.scales.x.max = Date.now();
-      });
-  </script>
-  <!-- End Trajectory Section -->
-
-<!-- END PAGE CONTENT -->
-</div>
+                // update metrics
+                var speedValue = document.getElementById("distance-value")
+                speedValue.innerHTML=msg.position.toFixed(1);
+                var speedValue = document.getElementById("speed-value")
+                speedValue.innerHTML=msg.speed.toFixed(1);
+            });
+        </script>
+    </div>
 </body>
 </html>
