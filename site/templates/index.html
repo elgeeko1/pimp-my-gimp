@@ -4,6 +4,7 @@
 <title>Pimp my Gimp</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-eval' 'unsafe-inline' data: filesystem: about: blob: ws: wss:">
 <link rel="manifest" href="/manifest.json">
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat">
@@ -60,7 +61,10 @@ body, h1,h2,h3,h4,h5,h6 {
     }
   }
 </script>
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
 </head>
 <body class="bgimg">
 
@@ -95,36 +99,59 @@ body, h1,h2,h3,h4,h5,h6 {
   </div>
   <!-- End Actions Section -->
 
-  <div class="w3-content" id="gimp-speed-graph"></div>
-  <script lanuage="text/javascript">
-    let layout = {
-      // title: "Speed",
-      // xaxis: { title: "Time" },
-      yaxis: { title: "Speed (mph)" },
-      height: 300,
-      margin: { t: 50, b: 50, l: 50, r: 50},
-      xaxis: { visible: false, showticklabels: false },
-      // yaxis: { range: [0.0, 3.0] }
-      showlegend: "False",
-      plot_bgcolor: "#000000",
-    };
+  <!-- Trajectory Section -->
+  <div class="w3-content" style="width: 100%; height: 200px;">
+    <canvas id="speedChart"></canvas>
+  </div>
+  <script>
+      var socket = io.connect('http://' + document.domain + ':' + location.port + '/trajectory');
+      var speedCtx = document.getElementById('speedChart').getContext('2d');
+      var timeWindow = 10;  // time window to show, in s
 
-    // inital empty graph
-    Plotly.newPlot('gimp-speed-graph', [{x: [], y: []}], layout);
+      var speedChart = new Chart(speedCtx, {
+          type: 'line',
+          data: {
+              labels: [],
+              datasets: [{
+                  label: 'Speed',
+                  data: []
+              }]
+          },
+          options: {
+              scales: {
+                  x: {
+                      type: "time",
+                      display: false,
+                      min:  Date.now() - (timeWindow * 1000),
+                      max:  Date.now(),
+                      grid: {
+                        display: false
+                      },
+                  },
+                  y: {
+                      min: 0,
+                      suggestedMax: 3,
+                      grid: {
+                        display: false,
+                      },
+                  }
+              }
+          }
+      });
 
-    function fetchDataAndRender() {
-      fetch('/speed')
-        .then(response => response.json())
-        .then(data => {
-          const graphDiv = document.getElementById('gimp-speed-graph');
-          Plotly.restyle(graphDiv, 'x', [data.data.x]);
-          Plotly.restyle(graphDiv, 'y', [data.data.y]);
-        });
-    }
-
-    // initial fetch followed by periodic fetching
-    setInterval(fetchDataAndRender, 250);
+      socket.on('newdata', function(msg) {
+          // console.log("Received", msg);
+          // Update speed chart
+          speedChart.data.labels.push(msg.timestamp);
+          speedChart.data.datasets.forEach((dataset) => {
+              dataset.data.push(msg.speed);
+          });
+          speedChart.update();
+          speedChart.options.scales.x.min = Date.now() - (timeWindow * 1000);
+          speedChart.options.scales.x.max = Date.now();
+      });
   </script>
+  <!-- End Trajectory Section -->
 
 <!-- END PAGE CONTENT -->
 </div>

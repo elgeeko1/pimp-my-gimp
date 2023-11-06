@@ -10,6 +10,7 @@
 # system libraries
 import threading
 import time
+import datetime
 import sys
 import os
 import math
@@ -30,14 +31,13 @@ from pydub.playback import play
 from flask import Flask, request, render_template
 from flask import send_from_directory  # send raw file
 from flask import jsonify  # graphing
+from flask_socketio import SocketIO, emit
 
 # maths for graphing
 import numpy
 
 # telegraf
-import requests
 from requests_futures.sessions import FuturesSession
-import urllib3
 
 # NeoPixel communication over GPIO 18 (pin 12)
 PIXEL_PIN = board.D18
@@ -60,6 +60,8 @@ ENCODER_SMOOTHING = 0.75
 
 # Define the URL for the HTTP listener of Telegraf
 TELEGRAPH_URL = "http://telegraf:8186/telegraf"
+
+WEBSOCKET_SECRET = "strutyourscuff"
 
 class TimeStampedCircularBuffer:
     """
@@ -149,17 +151,12 @@ class Trajectory:
     and applies exponential smoothing to the speed data to reduce noise and variability in the measurements.
     """
 
-    def __init__(
-            self,
-            window_size: int,
-            alpha: float = 0.5,
-            step_callback: Callable[[float, float, float], None] = lambda timestamp, position, speed : None):
+    def __init__(self, window_size: int, alpha: float = 0.5):
         """
         Initializes the Trajectory with a specified window size for the buffers and a smoothing factor for speed calculation.
 
         :param window_size: The maximum number of entries for the position and speed graphs.
         :param alpha: The smoothing factor used for exponential smoothing of the speed data.
-        :param step_callback: Callback to execute on every trajectory step.
         """
         self._last_timestamp = time.time()  # Stores the timestamp of the last update
         self._last_position = 0.0  # Stores the last calculated position
@@ -167,8 +164,16 @@ class Trajectory:
         self._position_graph = TimeStampedCircularBuffer(window_size)  # Circular buffer for position data
         self._speed_graph = TimeStampedCircularBuffer(window_size)  # Circular buffer for speed data
         self._speed_filter = ExponentialSmoothing(alpha)  # Exponential smoothing filter for speed
-        self._step_callback = step_callback
+        self._step_callbacks = []
+        
+    def register_callback(self, callback: Callable[[float, float, float], None]):
+        """
+        Register a callback to be issued upon every trajectory step.
 
+        :param callback: method witih signature (float, float, float) -> None
+        """
+        self._step_callbacks.append(callback)
+       
     def step(self, step_pulses: float = 1.0, offset_s: float = 0.0):
         """
         Updates the position and speed based on the step pulses received since the last update.
@@ -185,7 +190,10 @@ class Trajectory:
         self._last_timestamp = timestamp
         self._last_position = new_position
         self._last_speed = new_speed
-        self._step_callback(timestamp, new_position, new_speed)
+
+        # issue callbacks
+        for callback in self._step_callbacks:
+            callback(timestamp, new_position, new_speed)
 
     def position(self) -> (float, float):
         """
@@ -319,7 +327,7 @@ def encoder_check_speed():
     # assume zero spee and append a zero step to the encoder graph.
     # introduce latency of stopped_threshold_s / 2 to account for encoder pulses
     # that may arrive soon, resulting in artificially large reported speeds
-    stopped_threshold_s = 1.0
+    stopped_threshold_s = 0.5
     while True:
         timestamp, _ = trajectory.speed()
         if time.time() - timestamp > stopped_threshold_s:
@@ -328,10 +336,8 @@ def encoder_check_speed():
 
 def telegraf_post_datapoint(timestamp: float, position: float, speed: float) -> None:
     global telegraf_session
-
     # Convert the timestamp to nanoseconds
     timestamp_ns = int(timestamp * 1e9)
-    
     telegraf_session.post(
         TELEGRAPH_URL,
         data = f"distance_ft value={position / ENCODER_PULSES_PER_FOOT} {timestamp_ns}",
@@ -341,11 +347,22 @@ def telegraf_post_datapoint(timestamp: float, position: float, speed: float) -> 
         data = f"speed_ft_s value={speed / ENCODER_PULSES_PER_FOOT} {timestamp_ns}",
         headers = {'Content-Type': 'application/x-www-form-urlencoded'})
 
+def websocket_post_datapoint(timestamp: float, position: float, speed: float) -> None:
+    socketio.emit(
+        'newdata', {
+            'timestamp': math.ceil(timestamp * 1000),
+            'position': position,
+            'speed': speed },
+        namespace='/trajectory')
+
 # run the web server - blocking method
 #   pixels: initialized pixel array
 def run_web_server(pixels: neopixel.NeoPixel):
     print("Starting Flask server.")
+    global socketio
     app = Flask(__name__)
+    app.config['SECRET_KEY'] = WEBSOCKET_SECRET
+    socketio = SocketIO(app, cors_allowed_origins = "*")
 
     # read first milliseconds from alert sound
     # the range of acoustic interest is determined empirically
@@ -404,13 +421,21 @@ def run_web_server(pixels: neopixel.NeoPixel):
         }
         return jsonify(data = plotly_data)
     
+    @socketio.on('connect', namespace='/trajectory')
+    def trajetory_connect():
+        print("trajetory_connect()")
+    
     app.config['TEMPLATES_AUTO_RELOAD'] = True
-    app.run(host="0.0.0.0", port=80)
+    socketio.run(app,
+                 host = "0.0.0.0",
+                 port = 80,
+                 allow_unsafe_werkzeug = True)
 
 
 # global variables
-trajectory = Trajectory(ENCODER_WINDOW_PULSES, ENCODER_SMOOTHING, telegraf_post_datapoint)
+trajectory = Trajectory(ENCODER_WINDOW_PULSES, ENCODER_SMOOTHING)
 telegraf_session = FuturesSession()
+socketio = None
 
 # application entrypoint
 def main():
@@ -426,7 +451,9 @@ def main():
         encoder_check_speed_thread = threading.Thread(target=encoder_check_speed)
         encoder_check_speed_thread.daemon = True
         encoder_check_speed_thread.start()
-
+        trajectory.register_callback(telegraf_post_datapoint)
+        trajectory.register_callback(websocket_post_datapoint)
+        
         run_web_server(pixels)
         rcode = 0
     finally:
