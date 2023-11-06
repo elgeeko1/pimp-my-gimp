@@ -58,8 +58,6 @@ ENCODER_SMOOTHING = 0.6
 # Define the URL for the HTTP listener of Telegraf
 TELEGRAPH_URL = "http://telegraf:8186/telegraf"
 
-WEBSOCKET_SECRET = "strutyourscuff"
-
 
 class ExponentialSmoothing:
     """
@@ -313,20 +311,14 @@ def run_web_server(pixels: neopixel.NeoPixel):
     print("Starting Flask server.")
     global socketio
     app = Flask(__name__)
-    app.config['SECRET_KEY'] = WEBSOCKET_SECRET
     socketio = SocketIO(app, cors_allowed_origins = "*")
 
-    # read first milliseconds from alert sound
-    # the range of acoustic interest is determined empirically
+    # import sounds
+    # the time window of acoustic interest is determined emprically
     sound_meltdown = AudioSegment.from_mp3("static/sounds/meltdown.mp3")[100:1250]
-
-    # stayin' alive
-    # the range of acoustic interest is determined empirically
     sound_disco = AudioSegment.from_mp3("static/sounds/disco.mp3")[5000:9500]
-
-    # low rider
-    # the range of acoustic interest is determined empirically
     sound_underlight = AudioSegment.from_mp3("static/sounds/underlight.mp3")[250:6000]
+    sound_lights_out = AudioSegment.from_mp3("static/sounds/lights-out.mp3")[4900:6250]
 
     # return index page
     @app.route("/")
@@ -382,6 +374,7 @@ def run_web_server(pixels: neopixel.NeoPixel):
     # lights-out
     @app.route("/lights-out")
     def lights_out():
+        play(sound_lights_out)
         pixels_solid(pixels, (0,0,0))
         return ""
     

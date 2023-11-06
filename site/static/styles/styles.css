@@ -25,17 +25,8 @@ body {
 
 /* Style the header with more modern colors and spacing */
 header {
-    background: #ffffff;
-    padding: 1px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    background: linear-gradient(to right, 
-                                        #9db4ff, /* Light blue */
-                                        #b6fbff, /* Very light blue */
-                                        #9db4ff  /* Light blue */
-                                        );
+    background: #333;
     display: inline-block; /* Apply the gradient only to the text area */
-    margin: 0px; /* Space around the title */
-    border-radius: 10px; /* Rounded corners for the title */
     width: 100%;
 }
 
@@ -66,7 +57,6 @@ header h1 {
 header h2 {
     color: #6c757d;
     font-size: 1.5rem;
-    margin-bottom: 10px;
     text-transform: lowercase;
 }
 
@@ -76,8 +66,6 @@ header h2 {
     flex-wrap: wrap; /* Allows items to wrap */
     justify-content: center; /* Centers items horizontally */
     align-items: center; /* Aligns items vertically */
-    margin-top: 10px;  /* Adds some space at the top of the container */
-    margin-bottom: 10px; /* Adds some space at the bottom of the container */
     padding: 10px;
     gap: 10px; /* Provides more space between icons */
     background: #333; /* White background to make icons pop */
@@ -117,6 +105,7 @@ header h2 {
     font-size: 1.5rem;
     color: #888;
     vertical-align: middle;
+    margin-top: 10px;
     margin-bottom: 10px;
 }
 
