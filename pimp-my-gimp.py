@@ -10,7 +10,6 @@
 # system libraries
 import threading
 import time
-import datetime
 import sys
 import os
 import math
@@ -33,9 +32,6 @@ from flask import send_from_directory  # send raw file
 from flask import jsonify  # graphing
 from flask_socketio import SocketIO, emit
 
-# maths for graphing
-import numpy
-
 # telegraf
 from requests_futures.sessions import FuturesSession
 
@@ -48,8 +44,6 @@ COLOR_IDLE = (0, 64, 64)
 
 # Encoder GPIO pin
 ENCODER_PIN = 12  # GPIO 12 / pin 32
-# Encoder window length to remember, in unit of Encoder pulses.
-ENCODER_WINDOW_PULSES = 20
 # Encoder counts per revolution of the wheel
 ENCODER_PULSES_PER_REV = 4
 # Encoder pulses per linear foot
@@ -62,51 +56,6 @@ ENCODER_SMOOTHING = 0.75
 TELEGRAPH_URL = "http://telegraf:8186/telegraf"
 
 WEBSOCKET_SECRET = "strutyourscuff"
-
-class TimeStampedCircularBuffer:
-    """
-    A circular buffer that holds timestamped data entries.
-    Once the buffer reaches its capacity, it starts overwriting the oldest data.
-    """
-    def __init__(self, capacity: int):
-        """
-        Initializes the buffer with a given capacity.
-        
-        :param capacity: The maximum number of timestamped data entries the buffer can hold.
-        """
-        self._capacity = capacity
-        self._buffer = numpy.empty((0, 2), float)  # Initialize an empty 2D array for timestamp and data
-        self._head = 0  # Points to the start of the buffer (write head)
-
-    def append(self, timestamp: float, value: float) -> None:
-        """
-        Appends a new timestamped data entry to the buffer.
-
-        :param timestamp: The timestamp of the data point.
-        :param value: The data value to store.
-        """
-        if self._buffer.shape[0] < self._capacity:
-            self._buffer = numpy.vstack((self._buffer, numpy.array([timestamp, value])))
-        else:
-            self._buffer[self._head] = [timestamp, value]
-            self._head = (self._head + 1) % self._capacity
-
-    def last(self) -> numpy.ndarray:
-        """
-        Returns the last appended data entry.
-
-        :return: The last data entry in the buffer.
-        """
-        return self._buffer[(self._head - 1) % self._capacity]
-
-    def values(self) -> numpy.ndarray:
-        """
-        Retrieves all the timestamped data entries in the buffer, ordered by the time they were added.
-        This method takes into account the circular nature of the buffer to return the values in the correct order.
-
-        :return: A numpy array of timestamped data entries, where each entry is a [timestamp, value] pair.
-        """
-        return numpy.roll(self._buffer, -self._head, axis=0)
 
 
 class ExponentialSmoothing:
@@ -151,22 +100,18 @@ class ExponentialSmoothing:
 class Trajectory:
     """
     The Trajectory class calculates and stores the position and speed of an object over time.
-    It uses a TimeStampedCircularBuffer to maintain a fixed-size window of the latest position and speed data points
-    and applies exponential smoothing to the speed data to reduce noise and variability in the measurements.
+    Exponential smoothing is applied to speed data to reduce noise and variability in the measurements.
     """
 
-    def __init__(self, window_size: int, alpha: float = 0.5):
+    def __init__(self, alpha: float = 0.5):
         """
         Initializes the Trajectory with a specified window size for the buffers and a smoothing factor for speed calculation.
 
-        :param window_size: The maximum number of entries for the position and speed graphs.
         :param alpha: The smoothing factor used for exponential smoothing of the speed data.
         """
         self._last_timestamp = time.time()  # Stores the timestamp of the last update
         self._last_position = 0.0  # Stores the last calculated position
         self._last_speed = 0.0  # Stores the last calculated speed
-        self._position_graph = TimeStampedCircularBuffer(window_size)  # Circular buffer for position data
-        self._speed_graph = TimeStampedCircularBuffer(window_size)  # Circular buffer for speed data
         self._speed_filter = ExponentialSmoothing(alpha, 0.1)  # Exponential smoothing filter for speed
         self._step_callbacks = []
         
@@ -174,7 +119,7 @@ class Trajectory:
         """
         Register a callback to be issued upon every trajectory step.
 
-        :param callback: method witih signature (float, float, float) -> None
+        :param callback: method witih signature (timestamp: float, position: float, speed: float) -> None
         """
         self._step_callbacks.append(callback)
        
@@ -189,8 +134,6 @@ class Trajectory:
         dt = timestamp - self._last_timestamp
         new_position = self._last_position + step_pulses
         new_speed = self._speed_filter.smooth(step_pulses / dt)
-        self._position_graph.append(timestamp, new_position)
-        self._speed_graph.append(timestamp, new_speed)
         self._last_timestamp = timestamp
         self._last_position = new_position
         self._last_speed = new_speed
@@ -207,14 +150,6 @@ class Trajectory:
         """
         return self._last_timestamp, self._last_position
 
-    def positions(self) -> numpy.ndarray:
-        """
-        Retrieves all the recorded positions from the position graph.
-
-        :return: A numpy array of timestamped position entries.
-        """
-        return self._position_graph.values()
-
     def speed(self) -> (float, float):
         """
         Returns the last recorded speed and its associated timestamp.
@@ -222,14 +157,6 @@ class Trajectory:
         :return: A tuple containing the last timestamp and the last speed.
         """
         return self._last_timestamp, self._last_speed
-
-    def speeds(self) -> numpy.ndarray:
-        """
-        Retrieves all the recorded speeds from the speed graph.
-
-        :return: A numpy array of timestamped speed entries.
-        """
-        return self._speed_graph.values()
 
 
 # initialize the pixels array
@@ -314,7 +241,7 @@ def pixels_solid(pixels: neopixel.NeoPixel, color: tuple = COLOR_IDLE):
 
 # encoder init
 def encoder_init():
-    trajectory = Trajectory(ENCODER_WINDOW_PULSES, ENCODER_SMOOTHING)
+    trajectory = Trajectory(ENCODER_SMOOTHING)
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(ENCODER_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     GPIO.add_event_detect(ENCODER_PIN, GPIO.RISING, callback=encoder_handler)
@@ -452,7 +379,7 @@ def run_web_server(pixels: neopixel.NeoPixel):
 
 
 # global variables
-trajectory = Trajectory(ENCODER_WINDOW_PULSES, ENCODER_SMOOTHING)
+trajectory = Trajectory(ENCODER_SMOOTHING)
 telegraf_session = FuturesSession()
 socketio = None
 
