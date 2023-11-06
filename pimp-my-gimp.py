@@ -18,6 +18,7 @@ from typing import Callable
 # adafruit circuitpython libraries
 import board
 import neopixel
+import colorsys
 
 # GPIO libraries
 import RPi.GPIO as GPIO
@@ -40,7 +41,7 @@ PIXEL_PIN = board.D18
 # NeoPixel total number of NeoPixels in the array
 PIXEL_COUNT = 163
 # NeoPixel idle color
-COLOR_IDLE = (0, 64, 64)
+COLOR_IDLE = (0, 0, 64)
 
 # Encoder GPIO pin
 ENCODER_PIN = 12  # GPIO 12 / pin 32
@@ -49,8 +50,10 @@ ENCODER_PULSES_PER_REV = 4
 # Encoder pulses per linear foot
 # wheel diameter is 7.5", so circumference is pi * 7.5
 ENCODER_PULSES_PER_FOOT = float(ENCODER_PULSES_PER_REV) / (math.pi * (7.5/12.0))
+# Time since last encoder pulse after which the speed is assumed to be zero
+ENCODER_SPEED_ZERO_THRESHOLD_S = 0.75
 # Encoder speed smoothing coefficient (for exponential moving average)
-ENCODER_SMOOTHING = 0.75
+ENCODER_SMOOTHING = 0.6
 
 # Define the URL for the HTTP listener of Telegraf
 TELEGRAPH_URL = "http://telegraf:8186/telegraf"
@@ -62,16 +65,16 @@ class ExponentialSmoothing:
     """
     Exponential smoothing algorithm for time series data.
     """
-    def __init__(self, alpha: float = 0.5, zero_floor = -math.inf):
+    def __init__(self, alpha: float = 0.5, zero_tolerance = -math.inf):
         """
         Initializes the exponential smoothing filter.
 
         :param alpha: The smoothing factor, a value between 0 and 1.
-        :param zero_floor: Threshold below which the smoothed value should saturate to zero
+        :param zero_tolance: Threshold below which the absolute smoothed value should round to zero
         """
         self._alpha = alpha
         self._last_smoothed = None
-        self._zero_floor = zero_floor
+        self._zero_tolerance = zero_tolerance
 
     def smooth(self, value: float) -> float:
         """
@@ -84,7 +87,7 @@ class ExponentialSmoothing:
             self._last_smoothed = value
         else:
             self._last_smoothed = self._alpha * value + (1 - self._alpha) * self._last_smoothed
-            if value < self._zero_floor:
+            if math.fabs(self._last_smoothed) < self._zero_tolerance:
                 self._last_smoothed = 0.0
 
         return self._last_smoothed
@@ -112,7 +115,7 @@ class Trajectory:
         self._last_timestamp = time.time()  # Stores the timestamp of the last update
         self._last_position = 0.0  # Stores the last calculated position
         self._last_speed = 0.0  # Stores the last calculated speed
-        self._speed_filter = ExponentialSmoothing(alpha, 0.1)  # Exponential smoothing filter for speed
+        self._speed_filter = ExponentialSmoothing(alpha, 0.001)  # Exponential smoothing filter for speed
         self._step_callbacks = []
         
     def register_callback(self, callback: Callable[[float, float, float], None]):
@@ -257,16 +260,15 @@ def encoder_handler(channel: int):
 # to the trajectory
 def encoder_check_speed():
     global trajectory
-    # if last encoder pulse was seen more than stopped_threshold_s seconds ago,
+    # if time since last encoder pulse is greater than ENCODER_SPEED_ZERO_THRESHOLD_S,
     # assume zero spee and append a zero step to the encoder graph.
-    # introduce latency of stopped_threshold_s / 2 to account for encoder pulses
+    # introduce latency of ENCODER_SPEED_ZERO_THRESHOLD_S / 2 to account for encoder pulses
     # that may arrive soon, resulting in artificially large reported speeds
-    stopped_threshold_s = 1.0
     while True:
         timestamp, _ = trajectory.speed()
-        if time.time() - timestamp > stopped_threshold_s:
-            trajectory.step(0.0, -(stopped_threshold_s / 2.0))
-        time.sleep(stopped_threshold_s)
+        if time.time() - timestamp > ENCODER_SPEED_ZERO_THRESHOLD_S:
+            trajectory.step(0.0, -ENCODER_SPEED_ZERO_THRESHOLD_S)
+        time.sleep(ENCODER_SPEED_ZERO_THRESHOLD_S)
 
 def telegraf_post_datapoint(timestamp: float, position: float, speed: float) -> None:
     global telegraf_session
@@ -383,13 +385,48 @@ trajectory = Trajectory(ENCODER_SMOOTHING)
 telegraf_session = FuturesSession()
 socketio = None
 
+def speed_to_color(speed: float) -> list([float,float,float]):
+    """
+    Map a float value within the range [0, 1] to an RGB value.
+    
+    Parameters:
+    speed (float): A float value between 0 and 1 inclusive.
+    
+    Returns:
+    tuple: Corresponding RGB value as a tuple of integers (R, G, B).
+    """
+    # Ensure the input is within the range [0, 1]
+    speed = max(min(speed, 1.0), 0.0)
+
+    # Hue value for blue is around 0.66 and for red is 0.
+    # We linearly interpolate between these two values based on the speed.
+    hue = 0.66 * (1 - speed)
+    saturation = 1     # Full saturation for pure color
+    brightness = 0.5   # Brightness between [0,1]
+    
+    # Convert HSV to RGB
+    float_rgb = colorsys.hsv_to_rgb(hue, saturation, brightness)
+    # Map the RGB components to [0, 255]
+    rgb = tuple(int(component * 255) for component in float_rgb)
+    
+    return rgb
+
+def pixels_from_speed(timestamp: float, position: float, speed: float, pixels: neopixel.NeoPixel) -> None:
+    speed = speed / ENCODER_PULSES_PER_REV
+    color = None
+    if speed > 0:
+        # print("speed=" + str(speed) + " color=" + str(color))
+        color = speed_to_color(speed)
+        pixels_solid(pixels, color)
+
 # application entrypoint
 def main():
-    pixels = pixels_init()
+    global pixels
     rcode = 1
 
     try:
         print("Application starting")
+        pixels = pixels_init()
         pixels_display_hello(pixels)
         pixels_solid(pixels)
 
@@ -399,6 +436,8 @@ def main():
         encoder_check_speed_thread.start()
         trajectory.register_callback(telegraf_post_datapoint)
         trajectory.register_callback(websocket_post_datapoint)
+        trajectory.register_callback(
+            lambda timestamp, position, speed, pixels=pixels: pixels_from_speed(timestamp, position, speed, pixels))
         
         run_web_server(pixels)
         rcode = 0
