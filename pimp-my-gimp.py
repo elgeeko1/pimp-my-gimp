@@ -212,10 +212,13 @@ def pixels_cylon(pixels: neopixel.NeoPixel, count:int = 1):
 # display a colorful strobe pattern
 #   pixels: initialized pixel array
 #   count:  number of strobes
-def pixels_strobe(pixels: neopixel.NeoPixel, count:int = 10):
+#   delay_s: time delay between flashes
+def pixels_strobe(pixels: neopixel.NeoPixel, count:int = 10, delay_s: float = 0.0):
     for n in range(count):
         for color in [(255,0,0),(0,255,0),(0,0,255)]:
             pixels_flash(pixels, color)
+            if(delay_s > 0):
+                time.sleep(delay_s)
 
 
 # display a fill color that flashes on then off
@@ -343,7 +346,7 @@ def run_web_server(pixels: neopixel.NeoPixel):
     def disco():
         thread = threading.Thread(target = lambda: play(sound_disco), daemon = True)
         thread.start()
-        pixels_strobe(pixels)
+        pixels_strobe(pixels, 2, 0.5)
         pixels_solid(pixels, COLOR_IDLE)
         thread.join()
         return ""
