@@ -23,7 +23,7 @@ Base features:
 
 Additional optional features:
 - Audio output
-- Odometer / speedometer
+- Odometer, speedometer & speed-responsive lights
 
 # How to Use
 
@@ -89,7 +89,6 @@ docker run --privileged --rm -p 80:80/tcp elgeeko/pimp-my-gimp
 Ideas for future features: 
 - Cupholder
 - Odometer
-- Speed responsive LED track lighting
 - Off-road wheels
 - Battery assisted drive
 - Speed thresholded siren
