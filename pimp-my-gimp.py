@@ -242,33 +242,49 @@ def pixels_solid(pixels: neopixel.NeoPixel, color: tuple = COLOR_IDLE):
     pixels.show()
 
 
-# encoder init
-def encoder_init():
-    trajectory = Trajectory(ENCODER_SMOOTHING)
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setup(ENCODER_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    GPIO.add_event_detect(ENCODER_PIN, GPIO.RISING, callback=encoder_handler)
+class ScootEncoder:
+    # encoder init
+    def __init__(self,
+                 encoder_pin,
+                 alpha: float = 0.5,
+                 zero_speed_threshold_s = 0.01):
+        self._trajectory = Trajectory(alpha)
+        self._zero_speed_threshold_s = zero_speed_threshold_s
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(encoder_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.add_event_detect(encoder_pin, GPIO.RISING, callback=self.encoder_handler)
 
-# encoder edge event callback
-# called automatically in a separate thread on encoder pulses
-#   channel: event channel
-def encoder_handler(channel: int):
-    global trajectory
-    trajectory.step(1.0)
+        encoder_check_speed_thread = threading.Thread(target=self.encoder_check_speed)
+        encoder_check_speed_thread.daemon = True
+        encoder_check_speed_thread.start()
 
-# executes periodically to determine of speed is zero, and adds zero points
-# to the trajectory
-def encoder_check_speed():
-    global trajectory
-    # if time since last encoder pulse is greater than ENCODER_SPEED_ZERO_THRESHOLD_S,
-    # assume zero spee and append a zero step to the encoder graph.
-    # introduce latency of ENCODER_SPEED_ZERO_THRESHOLD_S / 2 to account for encoder pulses
-    # that may arrive soon, resulting in artificially large reported speeds
-    while True:
-        timestamp, _ = trajectory.speed()
-        if time.time() - timestamp > ENCODER_SPEED_ZERO_THRESHOLD_S:
-            trajectory.step(0.0, -ENCODER_SPEED_ZERO_THRESHOLD_S)
-        time.sleep(ENCODER_SPEED_ZERO_THRESHOLD_S)
+    # encoder edge event callback
+    # called automatically in a separate thread on encoder pulses
+    #   channel: event channel
+    def encoder_handler(self, channel: int):
+        self._trajectory.step(1.0)
+
+    # executes periodically to determine of speed is zero, and adds zero points
+    # to the trajectory
+    def encoder_check_speed(self):
+        # if time since last encoder pulse is greater than zero_speed_threshold_s,
+        # assume zero spee and append a zero step to the encoder graph.
+        # introduce latency of zero_speed_threshold_s / 2 to account for encoder pulses
+        # that may arrive soon, resulting in artificially large reported speeds
+        while True:
+            timestamp, _ = self._trajectory.speed()
+            if time.time() - timestamp > self._zero_speed_threshold_s:
+                self._trajectory.step(0.0, -self._zero_speed_threshold_s)
+            time.sleep(self._zero_speed_threshold_s)
+
+    def register_callback(self, callback: Callable[[float, float, float], None]):
+        """
+        Register a callback to be issued upon every trajectory step.
+
+        :param callback: method witih signature (timestamp: float, position: float, speed: float) -> None
+        """
+        self._trajectory.register_callback(callback)
+
 
 def telegraf_post_datapoint(timestamp: float, position: float, speed: float) -> None:
     global telegraf_session
@@ -379,12 +395,6 @@ def run_web_server(pixels: neopixel.NeoPixel):
                  port = 80,
                  allow_unsafe_werkzeug = True)
 
-
-# global variables
-trajectory = Trajectory(ENCODER_SMOOTHING)
-telegraf_session = FuturesSession()
-socketio = None
-
 def speed_to_color(speed: float) -> list([float,float,float]):
     """
     Map a float value within the range [0, 1] to an RGB value.
@@ -419,9 +429,12 @@ def pixels_from_speed(timestamp: float, position: float, speed: float, pixels: n
         color = speed_to_color(speed)
         pixels_solid(pixels, color)
 
+# global variables
+telegraf_session = FuturesSession()
+socketio = None
+
 # application entrypoint
 def main():
-    global pixels
     rcode = 1
 
     try:
@@ -430,13 +443,10 @@ def main():
         pixels_display_hello(pixels)
         pixels_solid(pixels)
 
-        encoder_init()
-        encoder_check_speed_thread = threading.Thread(target=encoder_check_speed)
-        encoder_check_speed_thread.daemon = True
-        encoder_check_speed_thread.start()
-        trajectory.register_callback(telegraf_post_datapoint)
-        trajectory.register_callback(websocket_post_datapoint)
-        trajectory.register_callback(
+        encoder = ScootEncoder(ENCODER_PIN, ENCODER_SMOOTHING, ENCODER_SPEED_ZERO_THRESHOLD_S)
+        encoder.register_callback(telegraf_post_datapoint)
+        encoder.register_callback(websocket_post_datapoint)
+        encoder.register_callback(
             lambda timestamp, position, speed, pixels=pixels: pixels_from_speed(timestamp, position, speed, pixels))
         
         run_web_server(pixels)
