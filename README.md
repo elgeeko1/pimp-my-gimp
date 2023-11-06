@@ -25,22 +25,9 @@ Additional optional features:
 - Audio output
 - Odometer / speedometer
 
-# System Diagram
+# How to Use
 
-
-
-# Flash Ubuntu Server to your SD card
-Follow the guide [How to install Ubuntu Server on your Raspberry Pi](https://ubuntu.com/tutorials/how-to-install-ubuntu-on-your-raspberry-pi#1-overview) to flash Ubuntu Server to your SD card.
-
-In step 3 "Advanced options" set the following username and password:
-> username: ubuntu <br>
-password: [a password you'll remember]
-
-You may skip step 5 "Install a Desktop".
-
-Take note of the IP address of the device once it is online.
-
-# Install prerequisites
+## Install prerequisites
 
 Install the following prerequisites on your Raspberry Pi
 
@@ -61,13 +48,14 @@ sudo usermod ${USER} -aG docker
 ```
 
 
-# Run the application
+## Run pimp-my-gimp
 
 ```shell
 docker run --privileged --rm -p 80:80/tcp elgeeko/pimp-my-gimp
 ```
 
-# Hardware
+
+# Hardware Materials
 
 ### Scooter, Raspberry Pi, battery & LED strip light
 - Scooter
@@ -112,7 +100,6 @@ Ideas for future features:
 ### Software
 - [Adafruit NeoPixel UberGuide](https://learn.adafruit.com/adafruit-neopixel-uberguide)
 - [Adafruit CircuitPython NeoPixel library](https://github.com/adafruit/Adafruit_CircuitPython_NeoPixel)
-
 
 ### Tutorials
 - [The raspi-config tool](https://www.raspberrypi.com/documentation/computers/configuration.html)
