@@ -78,3 +78,8 @@ RUN chmod +x /app/pimp-my-gimp.py
 
 ENV DISPLAY localhost:0.0
 ENTRYPOINT ["python", "-u", "/app/pimp-my-gimp.py"]
+HEALTHCHECK \
+    --interval=10s \
+    --timeout=5s \
+    --retries=5 \
+    CMD curl -f http://localhost:80
