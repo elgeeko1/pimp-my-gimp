@@ -374,7 +374,7 @@ def main():
         print("pixels initializing")
         pixels = ScootPixels(PIXEL_PIN, PIXEL_COUNT)
         pixels.tricolor()
-        pixels.solid()
+        pixels.solid(PIXEL_COLOR_IDLE)
         print("... pixels initialized")
 
         encoder = ScootEncoder(ENCODER_PIN, ENCODER_SMOOTHING, ENCODER_SPEED_ZERO_THRESHOLD_S)
