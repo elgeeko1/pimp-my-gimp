@@ -29,18 +29,10 @@ Additional optional features:
 
 ## Install prerequisites
 
-Install the following prerequisites on your Raspberry Pi
-
-I/O
+Install docker on your Raspberry Pi:
 ```shell
-sudo apt update
-sudo apt install -y ffmpeg
-sudo apt install -y rpi.gpio-common
-```
-
-Docker
-```shell
-sudo apt install software-properties-common
+sudo apt update -q
+sudo apt install -y software-properties-common
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 sudo apt-add-repository -y "deb https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
