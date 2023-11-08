@@ -37,7 +37,7 @@ PIXEL_PIN = board.D18
 # NeoPixel total number of NeoPixels in the array
 PIXEL_COUNT = 163
 # NeoPixel idle color
-COLOR_IDLE = (0, 0, 64)
+PIXEL_COLOR_IDLE = (0, 0, 64)
 
 # Encoder GPIO pin
 ENCODER_PIN = 12  # GPIO 12 / pin 32
@@ -287,7 +287,7 @@ def run_web_server(pixels: neopixel.NeoPixel):
 
     print("sound importing")
     # import sounds
-    # the time window of acoustic interest is determined emprically
+    # the time window of acoustic interest is determined emprically, in ms
     sound_meltdown = AudioSegment.from_mp3("static/sounds/meltdown.mp3")[100:1250]
     sound_disco = AudioSegment.from_mp3("static/sounds/disco.mp3")[5000:9500]
     sound_underlight = AudioSegment.from_mp3("static/sounds/underlight.mp3")[250:6000]
@@ -319,7 +319,7 @@ def run_web_server(pixels: neopixel.NeoPixel):
         thread.start()
         pixels.disco(2, 0.5)
         thread.join()
-        pixels.solid(COLOR_IDLE)
+        pixels.solid(PIXEL_COLOR_IDLE)
         return ""
 
     # underlight cylon effect
@@ -329,7 +329,7 @@ def run_web_server(pixels: neopixel.NeoPixel):
         thread.start()
         pixels.underlight()
         thread.join()
-        pixels.solid(COLOR_IDLE)
+        pixels.solid(PIXEL_COLOR_IDLE)
         return ""
     
     # meltdown effect
@@ -341,7 +341,7 @@ def run_web_server(pixels: neopixel.NeoPixel):
             pixels.flash((255,255,255), 2)
             pixels.flash((255,0,0), 1)
             thread.join()
-        pixels.solid(COLOR_IDLE)
+        pixels.solid(PIXEL_COLOR_IDLE)
         return ""
     
     # lights-out
