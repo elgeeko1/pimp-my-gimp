@@ -275,6 +275,9 @@ def websocket_post_datapoint(timestamp: float, position: float, speed: float) ->
             'speed': speed },
         namespace='/trajectory')
 
+
+socketio = None
+
 # run the web server - blocking method
 #   pixels: initialized pixel array
 def run_web_server(pixels: neopixel.NeoPixel):
@@ -282,13 +285,14 @@ def run_web_server(pixels: neopixel.NeoPixel):
     app = Flask(__name__)
     socketio = SocketIO(app, cors_allowed_origins = "*")
 
-    print("Importing sounds")
+    print("sound importing")
     # import sounds
     # the time window of acoustic interest is determined emprically
     sound_meltdown = AudioSegment.from_mp3("static/sounds/meltdown.mp3")[100:1250]
     sound_disco = AudioSegment.from_mp3("static/sounds/disco.mp3")[5000:9500]
     sound_underlight = AudioSegment.from_mp3("static/sounds/underlight.mp3")[250:6000]
     sound_lights_out = AudioSegment.from_mp3("static/sounds/lights-out.mp3")[4900:6250]
+    print("... sounds imported")
 
     # return index page
     @app.route("/")
@@ -351,7 +355,7 @@ def run_web_server(pixels: neopixel.NeoPixel):
     
     @socketio.on('connect', namespace='/trajectory')
     def trajetory_connect():
-        print("trajetory_connect()")
+        print("websocket connect: /trajectory")
 
     print("Starting Flask server.")
     app.config['TEMPLATES_AUTO_RELOAD'] = True
@@ -360,17 +364,18 @@ def run_web_server(pixels: neopixel.NeoPixel):
                  port = 80,
                  allow_unsafe_werkzeug = True)
 
-socketio = None
-
 # application entrypoint
 def main():
     rcode = 1
 
     try:
         print("Application starting")
+
+        print("pixels initializing")
         pixels = ScootPixels(PIXEL_PIN, PIXEL_COUNT)
         pixels.tricolor()
         pixels.solid()
+        print("... pixels initialized")
 
         encoder = ScootEncoder(ENCODER_PIN, ENCODER_SMOOTHING, ENCODER_SPEED_ZERO_THRESHOLD_S)
         encoder.register_callback(websocket_post_datapoint)
