@@ -84,16 +84,6 @@ docker run --privileged --rm -p 80:80/tcp elgeeko/pimp-my-gimp
   - [3.5mm Audio Cable - Male to Male](https://www.amazon.com/3-5mm-CGTime-Plated-Auxiliary-Stereo/dp/B074QHNY5Q)
 
 
-# Future Features
-
-Ideas for future features: 
-- Cupholder
-- Odometer
-- Off-road wheels
-- Battery assisted drive
-- Speed thresholded siren
-
-
 # References
 
 ### Software

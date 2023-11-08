@@ -4,7 +4,7 @@
 # Pimp my Gimp application
 # 
 # May be run standalone or as a system service.
-# Must be run as 'sudo'
+# Must be run as 'sudo' as required by neopixel library.
 #########
 
 # system libraries
@@ -18,7 +18,6 @@ from typing import Callable
 # adafruit circuitpython libraries
 import board
 import neopixel
-import colorsys
 
 # GPIO libraries
 import RPi.GPIO as GPIO
@@ -28,13 +27,10 @@ from pydub import AudioSegment
 from pydub.playback import play
 
 # webserver libraries
-from flask import Flask, request, render_template
+from flask import Flask, render_template
 from flask import send_from_directory  # send raw file
 from flask import jsonify  # graphing
 from flask_socketio import SocketIO, emit
-
-# telegraf
-from requests_futures.sessions import FuturesSession
 
 # NeoPixel communication over GPIO 18 (pin 12)
 PIXEL_PIN = board.D18
@@ -51,13 +47,9 @@ ENCODER_PULSES_PER_REV = 4
 # wheel diameter is 7.5", so circumference is pi * 7.5
 ENCODER_PULSES_PER_FOOT = float(ENCODER_PULSES_PER_REV) / (math.pi * (7.5/12.0))
 # Time since last encoder pulse after which the speed is assumed to be zero
-ENCODER_SPEED_ZERO_THRESHOLD_S = 0.75
+ENCODER_SPEED_ZERO_THRESHOLD_S = 0.5
 # Encoder speed smoothing coefficient (for exponential moving average)
 ENCODER_SMOOTHING = 0.6
-
-# Define the URL for the HTTP listener of Telegraf
-TELEGRAPH_URL = "http://telegraf:8186/telegraf"
-
 
 class ExponentialSmoothing:
     """
@@ -159,88 +151,77 @@ class Trajectory:
         """
         return self._last_timestamp, self._last_speed
 
+class ScootPixels:
+    def __init__(self, pin, pixel_count):
+        self._pin = pin
+        self._pixel_count = pixel_count
+        self._pixels = neopixel.NeoPixel(
+            pin = self._pin,
+            n = self._pixel_count,
+            auto_write = False
+        )
 
-# initialize the pixels array
-#   return: pixel array
-def pixels_init() -> neopixel.NeoPixel:
-    pixels = neopixel.NeoPixel(
-        pin = PIXEL_PIN,
-        n = PIXEL_COUNT,
-        auto_write = False
-    )
-    pixels_solid(pixels, (0,0,0))
-    return pixels
+    def deinit(self):
+        self._pixels.deinit()
 
+    def tricolor(self):
+        self.solid()
+        sequence = [(255,0,0), (0,255,0), (0,0,255)]
+        for color in sequence:
+            self.solid(color)
+            time.sleep(0.250)
+        self.solid()
 
-# display a 'hello' (initialization) pattern
-#   pixels: initialized pixel array
-def pixels_display_hello(pixels: neopixel.NeoPixel):
-    pixels_solid(pixels, (0,0,0))
-    sequence = [(255,0,0), (0,255,0), (0,0,255)]
-    for color in sequence:
-        pixels_solid(pixels, color)
-        time.sleep(0.250)
-    pixels_solid(pixels, (0,0,0))
+    def underlight(self, count:int = 1):
+        self.solid()
 
+        # rotate cylon pattern
+        for n in range(count):
+            for color in [(1,0,0),(0,1,0),(0,0,1)]:
+                # initial pattern
+                for pixel in range(self._pixel_count):
+                    value = int((1 - abs((self._pixel_count / 2) - pixel) / (self._pixel_count / 2)) * 255)
+                    self._pixels[pixel] = tuple(value * k for k in color)
 
-# display a rotating 'cylon' pattern
-#   pixels: initialized pixel array
-#   count:  number of cycles
-def pixels_cylon(pixels: neopixel.NeoPixel, count:int = 1):
-    pixels_solid(pixels, (0,0,0))
+                for cycle in range(self._pixel_count):
+                    last_pixel = self._pixels[0]
+                    for pixel in range(self._pixel_count - 1):
+                        self._pixels[pixel] = self._pixels[pixel + 1]
+                    self._pixels[self._pixel_count-1] = last_pixel
+                    self._pixels.show()
+                    time.sleep(0.005)
 
-    # rotate cylon pattern
-    for n in range(count):
-        for color in [(1,0,0),(0,1,0),(0,0,1)]:
-            # initial pattern
-            for pixel in range(PIXEL_COUNT):
-                value = int((1 - abs((PIXEL_COUNT / 2) - pixel) / (PIXEL_COUNT / 2)) * 255)
-                pixels[pixel] = tuple(value * k for k in color)
+                time.sleep(0.050) # give the CPU a break between colors
 
-            for cycle in range(PIXEL_COUNT):
-                last_pixel = pixels[0]
-                for pixel in range(PIXEL_COUNT - 1):
-                    pixels[pixel] = pixels[pixel+1]
-                pixels[PIXEL_COUNT-1] = last_pixel
-                pixels.show()
-                time.sleep(0.005)
+        self.solid()
 
-            time.sleep(0.050) # give the CPU a break between colors
+    # display a colorful strobe pattern
+    #   count:  number of strobes
+    #   delay_s: time delay between flashes
+    def disco(self, count:int = 10, delay_s: float = 0.0):
+        for n in range(count):
+            for color in [(255,0,0),(0,255,0),(0,0,255),(255,255,255)]:
+                self.flash(color)
+                if(delay_s > 0):
+                    time.sleep(delay_s)
 
-    pixels_solid(pixels, (0,0,0))
+    # display a fill color that flashes on then off
+    #   color:  color to display
+    #   count:  number of flashes
+    def flash(self, color:tuple = (255,255,255), count:int = 1):
+        for n in range(count):
+            self.solid()
+            time.sleep(0.150)
+            self.solid(color)
+            # sleep if not last flash
+            if n + 1 < count:
+                time.sleep(0.150)
 
-# display a colorful strobe pattern
-#   pixels: initialized pixel array
-#   count:  number of strobes
-#   delay_s: time delay between flashes
-def pixels_strobe(pixels: neopixel.NeoPixel, count:int = 10, delay_s: float = 0.0):
-    for n in range(count):
-        for color in [(255,0,0),(0,255,0),(0,0,255)]:
-            pixels_flash(pixels, color)
-            if(delay_s > 0):
-                time.sleep(delay_s)
-
-
-# display a fill color that flashes on then off
-#   pixels: initialized pixel array
-#   color:  color to display
-#   count:  number of flashes
-def pixels_flash(pixels: neopixel.NeoPixel, color:tuple = (255,255,255), count:int = 1):
-    for n in range(count):
-        pixels_solid(pixels, (0,0,0))
-        time.sleep(0.150)
-        pixels_solid(pixels, color)
-        # sleep if not last flash
-        if n + 1 < count:
-            time.sleep(0.0200)
-
-
-# display a solid color
-#   pixels: initialized pixel array
-#   color:  color to display
-def pixels_solid(pixels: neopixel.NeoPixel, color: tuple = COLOR_IDLE):
-    pixels.fill(color)
-    pixels.show()
+    # display a solid color
+    #   color:  color to display
+    def solid(self, color: tuple = (0,0,0)):
+        self._pixels.fill(color)
+        self._pixels.show()
 
 
 class ScootEncoder:
@@ -248,7 +229,7 @@ class ScootEncoder:
     def __init__(self,
                  encoder_pin,
                  alpha: float = 0.5,
-                 zero_speed_threshold_s = 0.01):
+                 zero_speed_threshold_s = 0.5):
         self._trajectory = Trajectory(alpha)
         self._zero_speed_threshold_s = zero_speed_threshold_s
         GPIO.setmode(GPIO.BCM)
@@ -286,20 +267,6 @@ class ScootEncoder:
         """
         self._trajectory.register_callback(callback)
 
-
-def telegraf_post_datapoint(timestamp: float, position: float, speed: float) -> None:
-    global telegraf_session
-    # Convert the timestamp to nanoseconds
-    timestamp_ns = int(timestamp * 1e9)
-    telegraf_session.post(
-        TELEGRAPH_URL,
-        data = f"distance_ft value={position / ENCODER_PULSES_PER_FOOT} {timestamp_ns}",
-        headers = {'Content-Type': 'application/x-www-form-urlencoded'})
-    telegraf_session.post(
-        TELEGRAPH_URL,
-        data = f"speed_ft_s value={speed / ENCODER_PULSES_PER_FOOT} {timestamp_ns}",
-        headers = {'Content-Type': 'application/x-www-form-urlencoded'})
-
 def websocket_post_datapoint(timestamp: float, position: float, speed: float) -> None:
     socketio.emit(
         'newdata', {
@@ -311,11 +278,11 @@ def websocket_post_datapoint(timestamp: float, position: float, speed: float) ->
 # run the web server - blocking method
 #   pixels: initialized pixel array
 def run_web_server(pixels: neopixel.NeoPixel):
-    print("Starting Flask server.")
     global socketio
     app = Flask(__name__)
     socketio = SocketIO(app, cors_allowed_origins = "*")
 
+    print("Importing sounds")
     # import sounds
     # the time window of acoustic interest is determined emprically
     sound_meltdown = AudioSegment.from_mp3("static/sounds/meltdown.mp3")[100:1250]
@@ -344,89 +311,55 @@ def run_web_server(pixels: neopixel.NeoPixel):
     # disco party!
     @app.route("/disco")
     def disco():
-        thread = threading.Thread(target = lambda: play(sound_disco), daemon = True)
+        thread = threading.Thread(target = lambda: play(sound_disco))
         thread.start()
-        pixels_strobe(pixels, 2, 0.5)
-        pixels_solid(pixels, COLOR_IDLE)
+        pixels.disco(2, 0.5)
         thread.join()
+        pixels.solid(COLOR_IDLE)
         return ""
 
     # underlight cylon effect
     @app.route("/underlight")
     def underlight():
-        thread = threading.Thread(target = lambda: play(sound_underlight), daemon = True)
+        thread = threading.Thread(target = lambda: play(sound_underlight))
         thread.start()
-        pixels_cylon(pixels)
-        pixels_solid(pixels, COLOR_IDLE)
+        pixels.underlight()
         thread.join()
+        pixels.solid(COLOR_IDLE)
         return ""
     
     # meltdown effect
     @app.route("/meltdown")
     def meltdown():
-        for count in range(4):
-            thread = threading.Thread(target = lambda: play(sound_meltdown), daemon = True)
+        for count in range(3):
+            thread = threading.Thread(target = lambda: play(sound_meltdown))
             thread.start()
-            pixels_flash(pixels, (255,255,255), 2)
-            pixels_flash(pixels, (255,0,0), 1)
+            pixels.flash((255,255,255), 2)
+            pixels.flash((255,0,0), 1)
             thread.join()
-        pixels_solid(pixels, COLOR_IDLE)
-        thread.join()
+        pixels.solid(COLOR_IDLE)
         return ""
     
     # lights-out
     @app.route("/lights-out")
     def lights_out():
-        play(sound_lights_out)
-        pixels_solid(pixels, (0,0,0))
+        thread = threading.Thread(target = lambda: play(sound_lights_out))
+        thread.start()
+        thread.join()
+        pixels.solid()
         return ""
     
     @socketio.on('connect', namespace='/trajectory')
     def trajetory_connect():
         print("trajetory_connect()")
-    
+
+    print("Starting Flask server.")
     app.config['TEMPLATES_AUTO_RELOAD'] = True
     socketio.run(app,
                  host = "0.0.0.0",
                  port = 80,
                  allow_unsafe_werkzeug = True)
 
-def speed_to_color(speed: float) -> list([float,float,float]):
-    """
-    Map a float value within the range [0, 1] to an RGB value.
-    
-    Parameters:
-    speed (float): A float value between 0 and 1 inclusive.
-    
-    Returns:
-    tuple: Corresponding RGB value as a tuple of integers (R, G, B).
-    """
-    # Ensure the input is within the range [0, 1]
-    speed = max(min(speed, 1.0), 0.0)
-
-    # Hue value for blue is around 0.66 and for red is 0.
-    # We linearly interpolate between these two values based on the speed.
-    hue = 0.66 * (1 - speed)
-    saturation = 1     # Full saturation for pure color
-    brightness = 0.5   # Brightness between [0,1]
-    
-    # Convert HSV to RGB
-    float_rgb = colorsys.hsv_to_rgb(hue, saturation, brightness)
-    # Map the RGB components to [0, 255]
-    rgb = tuple(int(component * 255) for component in float_rgb)
-    
-    return rgb
-
-def pixels_from_speed(timestamp: float, position: float, speed: float, pixels: neopixel.NeoPixel) -> None:
-    speed = speed / ENCODER_PULSES_PER_REV
-    color = None
-    if speed > 0:
-        # print("speed=" + str(speed) + " color=" + str(color))
-        color = speed_to_color(speed)
-        pixels_solid(pixels, color)
-
-# global variables
-telegraf_session = FuturesSession()
 socketio = None
 
 # application entrypoint
@@ -435,21 +368,20 @@ def main():
 
     try:
         print("Application starting")
-        pixels = pixels_init()
-        pixels_display_hello(pixels)
-        pixels_solid(pixels)
+        pixels = ScootPixels(PIXEL_PIN, PIXEL_COUNT)
+        pixels.tricolor()
+        pixels.solid()
 
         encoder = ScootEncoder(ENCODER_PIN, ENCODER_SMOOTHING, ENCODER_SPEED_ZERO_THRESHOLD_S)
-        encoder.register_callback(telegraf_post_datapoint)
         encoder.register_callback(websocket_post_datapoint)
-        encoder.register_callback(
-            lambda timestamp, position, speed, pixels=pixels: pixels_from_speed(timestamp, position, speed, pixels))
         
         run_web_server(pixels)
-        rcode = 0
-    finally:
-        pixels_solid(pixels, (0,0,0))
+
+        pixels.solid()
         pixels.deinit()
+
+        rcode = 0
+    finally:        
         GPIO.cleanup()
         print("Application exiting")
     sys.exit(rcode)

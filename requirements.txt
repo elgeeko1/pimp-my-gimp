@@ -5,4 +5,3 @@ adafruit-circuitpython-neopixel
 flask
 flask_socketio
 pydub
-requests-futures
