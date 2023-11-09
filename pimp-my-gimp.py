@@ -359,12 +359,11 @@ if __name__ == '__main__':
     print("... encoder initialized")
 
     # import sounds
-    # the time window of acoustic interest is determined emprically, in ms
     print("importing sounds")
-    sound_meltdown = AudioSegment.from_mp3("static/sounds/meltdown.mp3")[100:1250]
-    sound_disco = AudioSegment.from_mp3("static/sounds/disco.mp3")[5000:9500]
-    sound_underlight = AudioSegment.from_mp3("static/sounds/underlight.mp3")[250:6000]
-    sound_lights_out = AudioSegment.from_mp3("static/sounds/lights-out.mp3")[4900:6250]
+    sound_meltdown = AudioSegment.from_mp3("static/sounds/meltdown.mp3")
+    sound_disco = AudioSegment.from_mp3("static/sounds/disco.mp3")
+    sound_underlight = AudioSegment.from_mp3("static/sounds/underlight.mp3")
+    sound_lights_out = AudioSegment.from_mp3("static/sounds/lights-out.mp3")
     print("... sounds imported")
     
     try:
