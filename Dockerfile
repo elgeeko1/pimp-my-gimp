@@ -3,7 +3,8 @@
 ##################
 
 # Derive from an official Flask Docker image
-FROM python:latest AS BASE
+ARG BASEIMAGE=python:latest
+FROM ${BASEIMAGE} AS BASE
 
 USER root
 
@@ -23,9 +24,9 @@ RUN apt-get install --no-install-recommends -y -q apt-utils 2>&1 \
 RUN apt-get install --no-install-recommends -y -q ca-certificates
 
 # install prerequisites
-RUN apt-get install --no-install-recommends -y -q i2c-tools
-RUN apt-get install --no-install-recommends -y -q libgpiod-dev
-RUN apt-get install --no-install-recommends -y -q rpi.gpio-common
+#RUN apt-get install --no-install-recommends -y -q i2c-tools
+#RUN apt-get install --no-install-recommends -y -q libgpiod-dev
+#RUN apt-get install --no-install-recommends -y -q rpi.gpio-common
 RUN apt-get install --no-install-recommends -y -q ffmpeg libavcodec-extra
 
 # configure alsa (use device 1)
@@ -37,12 +38,13 @@ RUN apt-get autoremove -y -q
 RUN apt-get -y -q clean
 RUN rm -rf /var/lib/apt/lists/*
 
+# python configuration
+ENV PYTHONDONTWRITEBYTECODE=1
+
 # python requirements
 WORKDIR /app
-ENV PYTHONDONTWRITEBYTECODE=1
 COPY requirements.txt /app/
 RUN pip install \
-    --user \
     --no-warn-script-location \
     --no-cache-dir \
     -r requirements.txt
@@ -51,7 +53,7 @@ RUN pip install \
 ####################
 ## application stage
 ####################
-FROM scratch
+FROM ${BASEIMAGE}
 COPY --from=BASE / /
 LABEL maintainer="elgeeko1"
 

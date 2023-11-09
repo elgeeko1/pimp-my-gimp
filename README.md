@@ -43,7 +43,7 @@ sudo usermod ${USER} -aG docker
 ## Run pimp-my-gimp
 
 ```shell
-docker run --privileged --rm -p 80:80/tcp elgeeko/pimp-my-gimp
+docker run --name pimp-my-gimp --privileged -p 80:80/tcp elgeeko/pimp-my-gimp
 ```
 
 

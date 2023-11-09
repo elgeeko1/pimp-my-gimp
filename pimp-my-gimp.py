@@ -29,7 +29,6 @@ from pydub.playback import play
 # webserver libraries
 from flask import Flask, render_template
 from flask import send_from_directory  # send raw file
-from flask import jsonify  # graphing
 from flask_socketio import SocketIO, emit
 
 # NeoPixel communication over GPIO 18 (pin 12)
@@ -108,14 +107,6 @@ class Trajectory:
         self._speed_filter = ExponentialSmoothing(alpha, 0.001)  # Exponential smoothing filter for speed
         self._step_callbacks = []
         
-    def register_callback(self, callback: Callable[[float, float, float], None]):
-        """
-        Register a callback to be issued upon every trajectory step.
-
-        :param callback: method witih signature (timestamp: float, position: float, speed: float) -> None
-        """
-        self._step_callbacks.append(callback)
-       
     def step(self, step_pulses: float = 1.0, offset_s: float = 0.0):
         """
         Updates the position and speed based on the step pulses received since the last update.
@@ -151,6 +142,15 @@ class Trajectory:
         """
         return self._last_timestamp, self._last_speed
 
+    def register_callback(self, callback: Callable[[float, float, float], None]):
+        """
+        Register a callback to be issued upon every trajectory step.
+
+        :param callback: method witih signature (timestamp: float, position: float, speed: float) -> None
+        """
+        self._step_callbacks.append(callback)
+       
+
 class ScootPixels:
     def __init__(self, pin, pixel_count):
         self._pin = pin
@@ -165,7 +165,6 @@ class ScootPixels:
         self._pixels.deinit()
 
     def tricolor(self):
-        self.solid()
         sequence = [(255,0,0), (0,255,0), (0,0,255)]
         for color in sequence:
             self.solid(color)
@@ -227,7 +226,7 @@ class ScootPixels:
 class ScootEncoder:
     # encoder init
     def __init__(self,
-                 encoder_pin,
+                 encoder_pin: board.pin,
                  alpha: float = 0.5,
                  zero_speed_threshold_s = 0.5):
         self._trajectory = Trajectory(alpha)
@@ -267,32 +266,11 @@ class ScootEncoder:
         """
         self._trajectory.register_callback(callback)
 
-def websocket_post_datapoint(timestamp: float, position: float, speed: float) -> None:
-    socketio.emit(
-        'newdata', {
-            'timestamp': math.ceil(timestamp * 1000),
-            'position': position,
-            'speed': speed },
-        namespace='/trajectory')
-
-
-socketio = None
-
-# run the web server - blocking method
-#   pixels: initialized pixel array
-def run_web_server(pixels: neopixel.NeoPixel):
-    global socketio
+# application entrypoint
+if __name__ == '__main__':
     app = Flask(__name__)
+    app.config['TEMPLATES_AUTO_RELOAD'] = True
     socketio = SocketIO(app, cors_allowed_origins = "*")
-
-    print("sound importing")
-    # import sounds
-    # the time window of acoustic interest is determined emprically, in ms
-    sound_meltdown = AudioSegment.from_mp3("static/sounds/meltdown.mp3")[100:1250]
-    sound_disco = AudioSegment.from_mp3("static/sounds/disco.mp3")[5000:9500]
-    sound_underlight = AudioSegment.from_mp3("static/sounds/underlight.mp3")[250:6000]
-    sound_lights_out = AudioSegment.from_mp3("static/sounds/lights-out.mp3")[4900:6250]
-    print("... sounds imported")
 
     # return index page
     @app.route("/")
@@ -311,7 +289,7 @@ def run_web_server(pixels: neopixel.NeoPixel):
         return send_from_directory(
             os.path.join(app.root_path, 'static'),
             'manifest.json',)
-    
+
     # disco party!
     @app.route("/disco")
     def disco():
@@ -331,7 +309,7 @@ def run_web_server(pixels: neopixel.NeoPixel):
         thread.join()
         pixels.solid(PIXEL_COLOR_IDLE)
         return ""
-    
+
     # meltdown effect
     @app.route("/meltdown")
     def meltdown():
@@ -343,7 +321,7 @@ def run_web_server(pixels: neopixel.NeoPixel):
             thread.join()
         pixels.solid(PIXEL_COLOR_IDLE)
         return ""
-    
+
     # lights-out
     @app.route("/lights-out")
     def lights_out():
@@ -356,41 +334,39 @@ def run_web_server(pixels: neopixel.NeoPixel):
     @socketio.on('connect', namespace='/trajectory')
     def trajetory_connect():
         print("websocket connect: /trajectory")
+    
+    print("Initializing pixels")
+    pixels = ScootPixels(PIXEL_PIN, PIXEL_COUNT)
+    pixels.tricolor()
+    pixels.solid(PIXEL_COLOR_IDLE)
+    print("... pixels initialized")
 
-    print("Starting Flask server.")
-    app.config['TEMPLATES_AUTO_RELOAD'] = True
+    encoder = ScootEncoder(ENCODER_PIN, ENCODER_SMOOTHING, ENCODER_SPEED_ZERO_THRESHOLD_S)
+    encoder.register_callback(lambda timestamp, position, speed, socketio = socketio : 
+        socketio.emit('newdata', {
+            'timestamp': math.ceil(timestamp * 1000),
+            'position': position,
+            'speed': speed },
+        namespace='/trajectory')
+    )
+
+    # import sounds
+    # the time window of acoustic interest is determined emprically, in ms
+    print("importing sounds")
+    sound_meltdown = AudioSegment.from_mp3("static/sounds/meltdown.mp3")[100:1250]
+    sound_disco = AudioSegment.from_mp3("static/sounds/disco.mp3")[5000:9500]
+    sound_underlight = AudioSegment.from_mp3("static/sounds/underlight.mp3")[250:6000]
+    sound_lights_out = AudioSegment.from_mp3("static/sounds/lights-out.mp3")[4900:6250]
+    print("... sounds imported")
+    
     socketio.run(app,
                  host = "0.0.0.0",
                  port = 80,
                  allow_unsafe_werkzeug = True)
+    
+    pixels.solid((0,0,0))
+    pixels.deinit()
+    GPIO.cleanup()
 
-# application entrypoint
-def main():
-    rcode = 1
-
-    try:
-        print("Application starting")
-
-        print("pixels initializing")
-        pixels = ScootPixels(PIXEL_PIN, PIXEL_COUNT)
-        pixels.tricolor()
-        pixels.solid(PIXEL_COLOR_IDLE)
-        print("... pixels initialized")
-
-        encoder = ScootEncoder(ENCODER_PIN, ENCODER_SMOOTHING, ENCODER_SPEED_ZERO_THRESHOLD_S)
-        encoder.register_callback(websocket_post_datapoint)
-        
-        run_web_server(pixels)
-
-        pixels.solid()
-        pixels.deinit()
-
-        rcode = 0
-    finally:        
-        GPIO.cleanup()
-        print("Application exiting")
-    sys.exit(rcode)
-
-
-if __name__ == '__main__':
-    main()
+    print("Application exiting")
+    sys.exit(0)
