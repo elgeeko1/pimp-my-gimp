@@ -2,6 +2,8 @@ RPi.GPIO
 rpi-ws281x  # WS281 LEDs
 adafruit-blinka
 adafruit-circuitpython-neopixel
+gevent
+gevent-websocket
 flask
-flask_socketio
+flask-socketio
 pydub

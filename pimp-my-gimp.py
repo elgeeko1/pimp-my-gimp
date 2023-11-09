@@ -7,8 +7,12 @@
 # Must be run as 'sudo' as required by neopixel library.
 #########
 
-# system libraries
+# threading
+from gevent import monkey
+monkey.patch_all()
 import threading
+
+# system libraries
 import time
 import sys
 import os
@@ -23,6 +27,8 @@ import neopixel
 import RPi.GPIO as GPIO
 
 # audio libraries
+# be sure to import threading libraries prior to these imports
+# as the subprocess behavior will be different
 from pydub import AudioSegment
 from pydub.playback import play
 
@@ -270,7 +276,7 @@ class ScootEncoder:
 if __name__ == '__main__':
     app = Flask(__name__)
     app.config['TEMPLATES_AUTO_RELOAD'] = True
-    socketio = SocketIO(app, cors_allowed_origins = "*")
+    socketio = SocketIO(app, cors_allowed_origins = "*", async_mode = "gevent")
 
     # return index page
     @app.route("/")
@@ -341,6 +347,7 @@ if __name__ == '__main__':
     pixels.solid(PIXEL_COLOR_IDLE)
     print("... pixels initialized")
 
+    print("Initializing encoder")
     encoder = ScootEncoder(ENCODER_PIN, ENCODER_SMOOTHING, ENCODER_SPEED_ZERO_THRESHOLD_S)
     encoder.register_callback(lambda timestamp, position, speed, socketio = socketio : 
         socketio.emit('newdata', {
@@ -349,6 +356,7 @@ if __name__ == '__main__':
             'speed': speed },
         namespace='/trajectory')
     )
+    print("... encoder initialized")
 
     # import sounds
     # the time window of acoustic interest is determined emprically, in ms
@@ -359,14 +367,17 @@ if __name__ == '__main__':
     sound_lights_out = AudioSegment.from_mp3("static/sounds/lights-out.mp3")[4900:6250]
     print("... sounds imported")
     
-    socketio.run(app,
-                 host = "0.0.0.0",
-                 port = 80,
-                 allow_unsafe_werkzeug = True)
-    
-    pixels.solid((0,0,0))
-    pixels.deinit()
-    GPIO.cleanup()
+    try:
+        print("Starting Flask server")
+        socketio.run(app,
+                    host = "0.0.0.0",
+                    port = 80)
+    except KeyboardInterrupt:
+        print("Flask server terminated.")
+    finally:
+        pixels.solid((0,0,0))
+        pixels.deinit()
+        GPIO.cleanup()
 
-    print("Application exiting")
+    print("Application terminated")
     sys.exit(0)
