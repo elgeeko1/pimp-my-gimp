@@ -24,9 +24,6 @@ RUN apt-get install --no-install-recommends -y -q apt-utils 2>&1 \
 RUN apt-get install --no-install-recommends -y -q ca-certificates
 
 # install prerequisites
-#RUN apt-get install --no-install-recommends -y -q i2c-tools
-#RUN apt-get install --no-install-recommends -y -q libgpiod-dev
-#RUN apt-get install --no-install-recommends -y -q rpi.gpio-common
 RUN apt-get install --no-install-recommends -y -q ffmpeg libavcodec-extra
 
 # configure alsa (use device 1)
