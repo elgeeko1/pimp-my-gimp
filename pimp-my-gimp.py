@@ -35,6 +35,7 @@ from pydub.playback import play
 # webserver libraries
 from flask import Flask, render_template
 from flask import send_from_directory  # send raw file
+from flask import request
 from flask_socketio import SocketIO, emit
 
 # NeoPixel communication over GPIO 18 (pin 12)
@@ -55,6 +56,7 @@ ENCODER_PULSES_PER_FOOT = float(ENCODER_PULSES_PER_REV) / (math.pi * (7.5/12.0))
 ENCODER_SPEED_ZERO_THRESHOLD_S = 0.5
 # Encoder speed smoothing coefficient (for exponential moving average)
 ENCODER_SMOOTHING = 0.6
+
 
 class ExponentialSmoothing:
     """
@@ -156,6 +158,68 @@ class Trajectory:
         """
         self._step_callbacks.append(callback)
        
+
+class ScootEncoder:
+    """
+    A class responsible for handling encoder signals for a scooter, managing speed detection
+    and trajectory calculations.
+
+    Attributes:
+        _trajectory (Trajectory): An instance of Trajectory used to record the movement.
+        _zero_speed_threshold_s (float): The threshold in seconds to determine if the scooter is at zero speed.
+    """
+
+    def __init__(self,
+                 encoder_pin: board.pin,
+                 alpha: float = 0.5,
+                 zero_speed_threshold_s: float = 0.5):
+        """
+        Initialize the encoder with a pin, alpha value for trajectory smoothing, and zero speed threshold.
+
+        :param encoder_pin: The GPIO pin number connected to the encoder.
+        :param alpha: The alpha value used for trajectory smoothing. Defaults to 0.5.
+        :param zero_speed_threshold_s: The time threshold in seconds to consider the scooter to be at zero speed. Defaults to 0.5.
+        """
+        self._trajectory = Trajectory(alpha)
+        self._zero_speed_threshold_s = zero_speed_threshold_s
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(encoder_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.add_event_detect(encoder_pin, GPIO.RISING, callback = self.encoder_handler)
+
+        # Start a daemon thread to check the speed periodically and adjust the trajectory.
+        encoder_check_speed_thread = threading.Thread(target = self.encoder_check_speed, daemon = True)
+        encoder_check_speed_thread.start()
+
+    def encoder_handler(self, channel: int):
+        """
+        Handle the encoder edge event callback. Called automatically in a separate thread on encoder pulses.
+
+        :param channel: The GPIO channel that triggered the event.
+        """
+        self._trajectory.step(1.0)
+
+    def encoder_check_speed(self):
+        """
+        Execute periodically to determine if the speed is zero and add zero points to the trajectory.
+        Introduces a latency of half the zero_speed_threshold_s to account for encoder pulses that may arrive
+        soon after the execution of this method, preventing artificially inflated speeds.
+        """
+        while True:
+            timestamp, _ = self._trajectory.speed()
+            # Check if the current time exceeds the threshold since the last pulse.
+            if time.time() - timestamp > self._zero_speed_threshold_s:
+                self._trajectory.step(0.0, -self._zero_speed_threshold_s)
+            time.sleep(self._zero_speed_threshold_s / 2)
+
+    def register_callback(self, callback: Callable[[float, float, float], None]):
+        """
+        Register a callback to be called upon every trajectory step.
+
+        :param callback: The callback method with the signature (timestamp: float, position: float, speed: float) -> None
+                         that will be called with trajectory information.
+        """
+        self._trajectory.register_callback(callback)
+
 
 class ScootPixels:
     """
@@ -271,67 +335,6 @@ class ScootPixels:
         self.solid((0, 0, 0))
 
 
-class ScootEncoder:
-    """
-    A class responsible for handling encoder signals for a scooter, managing speed detection
-    and trajectory calculations.
-
-    Attributes:
-        _trajectory (Trajectory): An instance of Trajectory used to record the movement.
-        _zero_speed_threshold_s (float): The threshold in seconds to determine if the scooter is at zero speed.
-    """
-
-    def __init__(self,
-                 encoder_pin: board.pin,
-                 alpha: float = 0.5,
-                 zero_speed_threshold_s: float = 0.5):
-        """
-        Initialize the encoder with a pin, alpha value for trajectory smoothing, and zero speed threshold.
-
-        :param encoder_pin: The GPIO pin number connected to the encoder.
-        :param alpha: The alpha value used for trajectory smoothing. Defaults to 0.5.
-        :param zero_speed_threshold_s: The time threshold in seconds to consider the scooter to be at zero speed. Defaults to 0.5.
-        """
-        self._trajectory = Trajectory(alpha)
-        self._zero_speed_threshold_s = zero_speed_threshold_s
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(encoder_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        GPIO.add_event_detect(encoder_pin, GPIO.RISING, callback = self.encoder_handler)
-
-        # Start a daemon thread to check the speed periodically and adjust the trajectory.
-        encoder_check_speed_thread = threading.Thread(target = self.encoder_check_speed, daemon = True)
-        encoder_check_speed_thread.start()
-
-    def encoder_handler(self, channel: int):
-        """
-        Handle the encoder edge event callback. Called automatically in a separate thread on encoder pulses.
-
-        :param channel: The GPIO channel that triggered the event.
-        """
-        self._trajectory.step(1.0)
-
-    def encoder_check_speed(self):
-        """
-        Execute periodically to determine if the speed is zero and add zero points to the trajectory.
-        Introduces a latency of half the zero_speed_threshold_s to account for encoder pulses that may arrive
-        soon after the execution of this method, preventing artificially inflated speeds.
-        """
-        while True:
-            timestamp, _ = self._trajectory.speed()
-            # Check if the current time exceeds the threshold since the last pulse.
-            if time.time() - timestamp > self._zero_speed_threshold_s:
-                self._trajectory.step(0.0, -self._zero_speed_threshold_s)
-            time.sleep(self._zero_speed_threshold_s / 2)
-
-    def register_callback(self, callback: Callable[[float, float, float], None]):
-        """
-        Register a callback to be called upon every trajectory step.
-
-        :param callback: The callback method with the signature (timestamp: float, position: float, speed: float) -> None
-                         that will be called with trajectory information.
-        """
-        self._trajectory.register_callback(callback)
-
 class ScootSound:
     """
     Class to manage and play different audio effects for the scooter.
@@ -377,70 +380,121 @@ class ScootSound:
         thread.start()
         return thread
 
+
 # application entrypoint
 if __name__ == '__main__':
+    # Initialize Flask app and SocketIO
     app = Flask(__name__)
     app.config['TEMPLATES_AUTO_RELOAD'] = True
     socketio = SocketIO(app, cors_allowed_origins = "*", async_mode = "gevent")
 
-    # return index page
     @app.route("/")
     def index():
+        """
+        Serve the index page.
+        
+        :return: Rendered index.html template.
+        """
+        print(f"Endpoint '/': Accessed by {request.remote_addr}")
         return render_template('index.html')
 
-    # return favicon and manifest    
     @app.route("/favicon.ico")
     def favicon():
+        """
+        Serve the favicon.ico file.
+        
+        :return: favicon.ico from the static/images directory.
+        """
+        print(f"Endpoint '/favicon.ico': Accessed by {request.remote_addr}")
         return send_from_directory(
             os.path.join(app.root_path, 'static/images'),
             'favicon.ico',
             mimetype='image/vnd.microsoft.icon')
+
     @app.route("/manifest.json")
     def manifest():
+        """
+        Serve the manifest.json file.
+        
+        :return: manifest.json from the static directory.
+        """
+        print(f"Endpoint '/manifest.json': Accessed by {request.remote_addr}")
         return send_from_directory(
             os.path.join(app.root_path, 'static'),
             'manifest.json',)
 
-    # disco party!
     @app.route("/disco")
     def disco():
+        """
+        Handle the disco route to initiate a disco effect with sound and lights.
+        
+        :return: An empty string response after the effect.
+        """
+        print(f"Endpoint '/disco': Accessed by {request.remote_addr}")
         thread = sounds.play(sounds.sound_disco)
         pixels.disco(2, 0.5)
         thread.join()
         pixels.solid(PIXEL_COLOR_IDLE)
+        print("... Endpoint '/disco' complete")
         return ""
 
-    # underlight cylon effect
     @app.route("/underlight")
     def underlight():
+        """
+        Handle the underlight route to start the underlight effect.
+        
+        :return: An empty string response after the effect.
+        """
+        print(f"Endpoint '/underlight': Accessed by {request.remote_addr}")
         thread = sounds.play(sounds.sound_underlight)
         pixels.underlight()
         thread.join()
         pixels.solid(PIXEL_COLOR_IDLE)
+        print("... Endpoint '/underlight' complete")
         return ""
 
-    # meltdown effect
     @app.route("/meltdown")
     def meltdown():
+        """
+        Handle the meltdown route to perform the meltdown effect with flashing lights.
+        
+        :return: An empty string response after the effect.
+        """
+        print(f"Endpoint '/meltdown': Accessed by {request.remote_addr}")
         for count in range(3):
             thread = sounds.play(sounds.sound_meltdown)
             pixels.flash((255,255,255), 2)
             pixels.flash((255,0,0), 1)
             thread.join()
         pixels.solid(PIXEL_COLOR_IDLE)
+        print("... Endpoint '/meltdown' complete")
         return ""
 
-    # lights-out
     @app.route("/lights-out")
     def lights_out():
+        """
+        Handle the lights-out route to turn off all lights.
+        
+        :return: An empty string response after turning off the lights.
+        """
+        print(f"Endpoint '/lights-out': Accessed by {request.remote_addr}")
         sounds.play(sounds.sound_lights_out).join()
         pixels.off()
+        print("... Endpoint '/lights-out' complete")
         return ""
-    
+        
     @socketio.on('connect', namespace='/trajectory')
-    def trajetory_connect():
-        print("websocket connect: /trajectory")
-    
+    def trajectory_connect():
+        """
+        Handle websocket connection for the /trajectory namespace.
+        
+        Logs the IP address of the client that made the connection.
+
+        :return: None.
+        """
+        client_ip = request.remote_addr  # Gets the client's IP address
+        print(f"WebSocket client connected from {client_ip}: /trajectory")
+
     print("Initializing pixels")
     pixels = ScootPixels(PIXEL_PIN, PIXEL_COUNT)
     pixels.tricolor()

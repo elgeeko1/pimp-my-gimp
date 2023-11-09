@@ -1,6 +1,41 @@
 {
     "manifest_version": 3,
     "version": "1.0",
-    "short_name": "Pimp my Gimp",
-    "name": "Pimp my Gimp"
-}
+    "name": "Pimp my Gimp",
+    "short_name": "PmG",
+    "description": "Trick out your mobility device.",
+    "lang": "en-US",
+    "start_url": "./",
+    "display": "standalone",
+    "theme_color": "#000000",
+    "background_color": "#ffffff",
+    "icons": [
+      {
+        "src": "static/images/logo-pimp-my-gimp-150.png",
+        "sizes": "150x150",
+        "type": "image/png"
+      },
+      {
+        "src": "static/images/button-underlight.png",
+        "sizes": "48x48",
+        "type": "image/png"
+      },
+      {
+        "src": "static/images/button-disco.png",
+        "sizes": "48x48",
+        "type": "image/png"
+      },
+      {
+        "src": "static/images/button-meltdown.png",
+        "sizes": "48x48",
+        "type": "image/png"
+      },
+      {
+        "src": "static/images/button-lights-out-alt.webp",
+        "sizes": "48x48",
+        "type": "image/webp"
+      }
+    ],
+    "content_security_policy": "default-src * 'unsafe-eval' 'unsafe-inline' data: filesystem: about: blob: ws: wss:"
+  }
+  
