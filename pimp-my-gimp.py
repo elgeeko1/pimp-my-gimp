@@ -158,7 +158,23 @@ class Trajectory:
        
 
 class ScootPixels:
-    def __init__(self, pin, pixel_count):
+    """
+    A class to manage the LED pixels on a scooter, allowing for various lighting effects
+    such as tricolor sequence, underlight cylon pattern, disco strobe, and solid color display.
+
+    Attributes:
+        _pin: Pin to which the NeoPixel LEDs are connected.
+        _pixel_count: The total number of NeoPixel LEDs.
+        _pixels: Instance of NeoPixel class to control the LEDs.
+    """
+
+    def __init__(self, pin, pixel_count: int):
+        """
+        Initialize the ScootPixels with the specified pin and pixel count.
+
+        :param pin: The pin where the NeoPixel LEDs are connected.
+        :param pixel_count: The number of NeoPixel LEDs.
+        """
         self._pin = pin
         self._pixel_count = pixel_count
         self._pixels = neopixel.NeoPixel(
@@ -166,111 +182,200 @@ class ScootPixels:
             n = self._pixel_count,
             auto_write = False
         )
+        self.off()
 
     def deinit(self):
+        """
+        Deinitialize the pixels and release the resources.
+        """
+        self.off()
         self._pixels.deinit()
 
     def tricolor(self):
-        sequence = [(255,0,0), (0,255,0), (0,0,255)]
+        """
+        Display a tricolor sequence on the LEDs, cycling through red, green, and blue.
+        """
+        sequence = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
         for color in sequence:
             self.solid(color)
             time.sleep(0.250)
-        self.solid()
+        self.off()  # Turn off the lights after the sequence
 
-    def underlight(self, count:int = 1):
-        self.solid()
+    def underlight(self, count: int = 1):
+        """
+        Display a 'cylon' pattern underneath the scooter, moving back and forth.
 
-        # rotate cylon pattern
+        :param count: The number of times to repeat the cylon pattern.
+        """
+        # Rotate the cylon pattern for the specified count
         for n in range(count):
-            for color in [(1,0,0),(0,1,0),(0,0,1)]:
-                # initial pattern
+            for color in [(1, 0, 0), (0, 1, 0), (0, 0, 1)]:
+                # Initialize pattern
                 for pixel in range(self._pixel_count):
                     value = int((1 - abs((self._pixel_count / 2) - pixel) / (self._pixel_count / 2)) * 255)
                     self._pixels[pixel] = tuple(value * k for k in color)
 
+                # Cycle the pattern through the pixels
                 for cycle in range(self._pixel_count):
                     last_pixel = self._pixels[0]
                     for pixel in range(self._pixel_count - 1):
                         self._pixels[pixel] = self._pixels[pixel + 1]
-                    self._pixels[self._pixel_count-1] = last_pixel
+                    self._pixels[self._pixel_count - 1] = last_pixel
                     self._pixels.show()
                     time.sleep(0.005)
 
-                time.sleep(0.050) # give the CPU a break between colors
+                time.sleep(0.050)  # Give the CPU a break between colors
 
-        self.solid()
+        self.off()  # Turn off the lights after the pattern
 
-    # display a colorful strobe pattern
-    #   count:  number of strobes
-    #   delay_s: time delay between flashes
-    def disco(self, count:int = 10, delay_s: float = 0.0):
+    def disco(self, count: int = 10, delay_s: float = 0.1):
+        """
+        Display a colorful strobe pattern resembling a disco light.
+
+        :param count: The number of strobe flashes.
+        :param delay_s: The time delay in seconds between each flash.
+        """
         for n in range(count):
-            for color in [(255,0,0),(0,255,0),(0,0,255),(255,255,255)]:
+            for color in [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 255)]:
                 self.flash(color)
-                if(delay_s > 0):
+                if delay_s > 0:
                     time.sleep(delay_s)
 
-    # display a fill color that flashes on then off
-    #   color:  color to display
-    #   count:  number of flashes
-    def flash(self, color:tuple = (255,255,255), count:int = 1):
+    def flash(self, color: tuple = (255, 255, 255), count: int = 1):
+        """
+        Display a color that flashes on and then off.
+
+        :param color: The color to flash.
+        :param count: The number of times to flash the color.
+        """
         for n in range(count):
-            self.solid()
+            self.off()  # Turn off before flashing
             time.sleep(0.150)
             self.solid(color)
-            # sleep if not last flash
-            if n + 1 < count:
+            if n + 1 < count:  # Sleep if not the last flash
                 time.sleep(0.150)
 
-    # display a solid color
-    #   color:  color to display
-    def solid(self, color: tuple = (0,0,0)):
+    def solid(self, color: tuple = (0, 0, 0)):
+        """
+        Display a solid color across all LEDs.
+
+        :param color: The color to display.
+        """
         self._pixels.fill(color)
         self._pixels.show()
 
+    def off(self):
+        """
+        Turn off all LEDS.
+        """
+        self.solid((0, 0, 0))
+
 
 class ScootEncoder:
-    # encoder init
+    """
+    A class responsible for handling encoder signals for a scooter, managing speed detection
+    and trajectory calculations.
+
+    Attributes:
+        _trajectory (Trajectory): An instance of Trajectory used to record the movement.
+        _zero_speed_threshold_s (float): The threshold in seconds to determine if the scooter is at zero speed.
+    """
+
     def __init__(self,
                  encoder_pin: board.pin,
                  alpha: float = 0.5,
-                 zero_speed_threshold_s = 0.5):
+                 zero_speed_threshold_s: float = 0.5):
+        """
+        Initialize the encoder with a pin, alpha value for trajectory smoothing, and zero speed threshold.
+
+        :param encoder_pin: The GPIO pin number connected to the encoder.
+        :param alpha: The alpha value used for trajectory smoothing. Defaults to 0.5.
+        :param zero_speed_threshold_s: The time threshold in seconds to consider the scooter to be at zero speed. Defaults to 0.5.
+        """
         self._trajectory = Trajectory(alpha)
         self._zero_speed_threshold_s = zero_speed_threshold_s
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(encoder_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        GPIO.add_event_detect(encoder_pin, GPIO.RISING, callback=self.encoder_handler)
+        GPIO.add_event_detect(encoder_pin, GPIO.RISING, callback = self.encoder_handler)
 
-        encoder_check_speed_thread = threading.Thread(target=self.encoder_check_speed)
-        encoder_check_speed_thread.daemon = True
+        # Start a daemon thread to check the speed periodically and adjust the trajectory.
+        encoder_check_speed_thread = threading.Thread(target = self.encoder_check_speed, daemon = True)
         encoder_check_speed_thread.start()
 
-    # encoder edge event callback
-    # called automatically in a separate thread on encoder pulses
-    #   channel: event channel
     def encoder_handler(self, channel: int):
+        """
+        Handle the encoder edge event callback. Called automatically in a separate thread on encoder pulses.
+
+        :param channel: The GPIO channel that triggered the event.
+        """
         self._trajectory.step(1.0)
 
-    # executes periodically to determine of speed is zero, and adds zero points
-    # to the trajectory
     def encoder_check_speed(self):
-        # if time since last encoder pulse is greater than zero_speed_threshold_s,
-        # assume zero spee and append a zero step to the encoder graph.
-        # introduce latency of zero_speed_threshold_s / 2 to account for encoder pulses
-        # that may arrive soon, resulting in artificially large reported speeds
+        """
+        Execute periodically to determine if the speed is zero and add zero points to the trajectory.
+        Introduces a latency of half the zero_speed_threshold_s to account for encoder pulses that may arrive
+        soon after the execution of this method, preventing artificially inflated speeds.
+        """
         while True:
             timestamp, _ = self._trajectory.speed()
+            # Check if the current time exceeds the threshold since the last pulse.
             if time.time() - timestamp > self._zero_speed_threshold_s:
                 self._trajectory.step(0.0, -self._zero_speed_threshold_s)
-            time.sleep(self._zero_speed_threshold_s)
+            time.sleep(self._zero_speed_threshold_s / 2)
 
     def register_callback(self, callback: Callable[[float, float, float], None]):
         """
-        Register a callback to be issued upon every trajectory step.
+        Register a callback to be called upon every trajectory step.
 
-        :param callback: method witih signature (timestamp: float, position: float, speed: float) -> None
+        :param callback: The callback method with the signature (timestamp: float, position: float, speed: float) -> None
+                         that will be called with trajectory information.
         """
         self._trajectory.register_callback(callback)
+
+class ScootSound:
+    """
+    Class to manage and play different audio effects for the scooter.
+
+    Attributes:
+        sound_meltdown (AudioSegment): An audio segment for the 'meltdown' mode.
+        sound_disco (AudioSegment): An audio segment for the 'disco' mode.
+        sound_underlight (AudioSegment): An audio segment for the 'underlight' mode.
+        sound_lights_out (AudioSegment): An audio segment for the 'lights out' mode.
+
+    Depencencies:
+        threading
+        pydub
+    """
+    def __init__(self):
+        """
+        Initializes the ScootSound class with empty audio segments.
+        """
+        self.sound_meltdown = AudioSegment.empty()
+        self.sound_disco = AudioSegment.empty()
+        self.sound_underlight = AudioSegment.empty()
+        self.sound_lights_out = AudioSegment.empty()
+
+    def import_from_disk(self):
+        """
+        Imports audio files from the disk into their corresponding attributes.
+        Assumes the existence of MP3 files in the 'static/sounds/' directory.
+        This method blocks while reading and parsing audio, which may be lengthy.
+        """
+        self.sound_meltdown = AudioSegment.from_mp3("static/sounds/meltdown.mp3")
+        self.sound_disco = AudioSegment.from_mp3("static/sounds/disco.mp3")
+        self.sound_underlight = AudioSegment.from_mp3("static/sounds/underlight.mp3")
+        self.sound_lights_out = AudioSegment.from_mp3("static/sounds/lights-out.mp3")
+
+    def play(self, segment: AudioSegment) -> threading.Thread:
+        """
+        Plays an audio segment in a new daemon thread.
+
+        :param segment (AudioSegment): The audio segment to be played.
+        :return threading.Thread: The thread in which the audio segment is being played.
+        """
+        thread = threading.Thread(target = lambda: play(segment), daemon = True)
+        thread.start()
+        return thread
 
 # application entrypoint
 if __name__ == '__main__':
@@ -299,8 +404,7 @@ if __name__ == '__main__':
     # disco party!
     @app.route("/disco")
     def disco():
-        thread = threading.Thread(target = lambda: play(sound_disco))
-        thread.start()
+        thread = sounds.play(sounds.sound_disco)
         pixels.disco(2, 0.5)
         thread.join()
         pixels.solid(PIXEL_COLOR_IDLE)
@@ -309,8 +413,7 @@ if __name__ == '__main__':
     # underlight cylon effect
     @app.route("/underlight")
     def underlight():
-        thread = threading.Thread(target = lambda: play(sound_underlight))
-        thread.start()
+        thread = sounds.play(sounds.sound_underlight)
         pixels.underlight()
         thread.join()
         pixels.solid(PIXEL_COLOR_IDLE)
@@ -320,8 +423,7 @@ if __name__ == '__main__':
     @app.route("/meltdown")
     def meltdown():
         for count in range(3):
-            thread = threading.Thread(target = lambda: play(sound_meltdown))
-            thread.start()
+            thread = sounds.play(sounds.sound_meltdown)
             pixels.flash((255,255,255), 2)
             pixels.flash((255,0,0), 1)
             thread.join()
@@ -331,10 +433,8 @@ if __name__ == '__main__':
     # lights-out
     @app.route("/lights-out")
     def lights_out():
-        thread = threading.Thread(target = lambda: play(sound_lights_out))
-        thread.start()
-        thread.join()
-        pixels.solid()
+        sounds.play(sounds.sound_lights_out).join()
+        pixels.off()
         return ""
     
     @socketio.on('connect', namespace='/trajectory')
@@ -358,13 +458,10 @@ if __name__ == '__main__':
     )
     print("... encoder initialized")
 
-    # import sounds
-    print("importing sounds")
-    sound_meltdown = AudioSegment.from_mp3("static/sounds/meltdown.mp3")
-    sound_disco = AudioSegment.from_mp3("static/sounds/disco.mp3")
-    sound_underlight = AudioSegment.from_mp3("static/sounds/underlight.mp3")
-    sound_lights_out = AudioSegment.from_mp3("static/sounds/lights-out.mp3")
-    print("... sounds imported")
+    print("Initializing sounds")
+    sounds = ScootSound()
+    sounds.import_from_disk()
+    print("... sounds initialized")
     
     try:
         print("Starting Flask server")
@@ -374,7 +471,6 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print("Flask server terminated.")
     finally:
-        pixels.solid((0,0,0))
         pixels.deinit()
         GPIO.cleanup()
 
