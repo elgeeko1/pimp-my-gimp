@@ -70,6 +70,7 @@ docker run \
     -p 80:80/tcp \
     --volume pimp-my-gimp-cache:/app/cache \
     --restart unless-stopped \
+    --detach \
     elgeeko/pimp-my-gimp
 ```
 
