@@ -48,6 +48,8 @@ All hardware components are optional. To disable a hardware component, add the a
 - `--no-speed`: disable the speedometer
 - `--no-audio`: disable audio output
 
+Configure your Raspberry Pi to connect to your phone's wifi hotspot for enhanced portability.
+
 ## Parts
 
 ### Mobility Device
