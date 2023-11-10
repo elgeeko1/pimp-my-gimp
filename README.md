@@ -5,8 +5,10 @@
 
 Enhance your mobility experience with "Pimp My Gimp," a makeover for your mobility assistive device using a Raspberry Pi and Python. Features include battery-operated programmable LED underlighting, speakers, and a real-time speedometer.
 
-<img src="docs/web-app-screenshot.png" alt="Pimp my Gimp Application Screenshot" width="250"/> <img src="docs/animated-mobility-device.png" alt="Animated Mobility Device" width="350"/>
+<img src="docs/web-app-screenshot.png" alt="Pimp my Gimp Application Screenshot" width="250"/>
 
+[![video demonstration](https://img.youtube.com/vi/8swAAmyXXOw/0.jpg)](https://www.youtube.com/watch?v=8swAAmyXXOw)<br/>
+_Click to see a video of an enhanced scooter_
 
 ## Features
 
@@ -135,3 +137,5 @@ _Mounting of magnets on moving axle and Hall Effect sensor. Ensure the Hall Effe
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+
+<img src="docs/animated-mobility-device.png" alt="Animated Mobility Device" width="350"/>
