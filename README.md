@@ -50,9 +50,13 @@ All hardware components are optional. To disable a hardware component, add the a
 
 ## Parts
 
+### Mobility Device
+Any mobility device may be adapted to use these modifications. The device used here is a knee scooter.
+
+- Knee Scooter: [KneeRover Knee Scooter](https://www.amazon.com/dp/B01J4AMXD8)
+
 ### Raspberry Pi
 
-- Mobility Device (example): [KneeRover Knee Scooter](https://www.amazon.com/dp/B01J4AMXD8)
 - Raspberry Pi: [Raspberry Pi 4B](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/)
 - Case: [Miuzei Raspberry Pi 4B Case](https://a.co/d/8ELukua)
 - Battery: [Talentcell 22400mAh 82.88Wh lithium ion battery PB240A1](https://www.amazon.com/dp/B078T7M9HZ)
