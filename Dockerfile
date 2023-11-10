@@ -69,12 +69,14 @@ RUN echo "${TZ}" > /etc/timezone \
 	&& dpkg-reconfigure -f noninteractive tzdata
 
 WORKDIR /app
+RUN mkdir /app/config
 
 # copy application files into the container
 COPY pimp-my-gimp.py /app/
 COPY site /app/
 RUN chmod +x /app/pimp-my-gimp.py
 
+STOPSIGNAL SIGINT
 ENV DISPLAY localhost:0.0
 ENTRYPOINT ["python", "-u", "/app/pimp-my-gimp.py"]
 HEALTHCHECK \

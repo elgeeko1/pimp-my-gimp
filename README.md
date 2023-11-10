@@ -52,6 +52,27 @@ All hardware components are optional. To disable a hardware component, add the a
 
 Configure your Raspberry Pi to connect to your phone's wifi hotspot for enhanced portability.
 
+### Running on Raspberry Pi boot
+
+Create a docker volume to store trajectory information such as
+distance traveled across program restarts. This only needs to be
+executed once.
+```shell
+docker volume create pimp-my-gimp
+```
+
+Run the application as before, modified with the persitant data
+volume and restart policy:
+```shell
+docker run \
+    --name pimp-my-gimp \
+    --privileged \
+    -p 80:80/tcp \
+    --volume pimp-my-gimp:/app/config \
+    --restart unless-stopped \
+    elgeeko/pimp-my-gimp
+```
+
 ## Parts
 
 ### Mobility Device

@@ -38,6 +38,10 @@ from flask import send_from_directory  # send raw file
 from flask import request
 from flask_socketio import SocketIO, emit
 
+# persistent metrics
+from configparser import ConfigParser
+import atexit
+
 # argument parser
 import argparse
 
@@ -105,14 +109,15 @@ class Trajectory:
     Exponential smoothing is applied to speed data to reduce noise and variability in the measurements.
     """
 
-    def __init__(self, alpha: float = 0.5):
+    def __init__(self, alpha: float = 0.5, initial_position = 0.0):
         """
         Initializes the Trajectory with a specified window size for the buffers and a smoothing factor for speed calculation.
 
         :param alpha: The smoothing factor used for exponential smoothing of the speed data.
+        :param initial_position: The initial position of the encoder, in pulses.
         """
         self._last_timestamp = time.time()  # Stores the timestamp of the last update
-        self._last_position = 0.0  # Stores the last calculated position
+        self._last_position = initial_position  # Stores the last calculated position
         self._last_speed = 0.0  # Stores the last calculated speed
         self._speed_filter = ExponentialSmoothing(alpha, 0.001)  # Exponential smoothing filter for speed
         self._step_callbacks = []
@@ -175,6 +180,7 @@ class ScootEncoder:
                  encoder_pin: board.pin,
                  alpha: float = 0.5,
                  zero_speed_threshold_s: float = 0.5,
+                 initial_position: float = 0.0,
                  enabled: bool = True):
         """
         Initialize the encoder with a pin, alpha value for trajectory smoothing, and zero speed threshold.
@@ -182,9 +188,10 @@ class ScootEncoder:
         :param encoder_pin: The GPIO pin number connected to the encoder.
         :param alpha: The alpha value used for trajectory smoothing. Defaults to 0.5.
         :param zero_speed_threshold_s: The time threshold in seconds to consider the scooter to be at zero speed. Defaults to 0.5.
+        :param initial_position: The initial position of the encoder, in pulses.
         :param enabled: Enable the hardware peripheral.
         """
-        self._trajectory = Trajectory(alpha)
+        self._trajectory = Trajectory(alpha, initial_position)
         self._zero_speed_threshold_s = zero_speed_threshold_s
         self.enabled = enabled
 
@@ -412,6 +419,97 @@ class ScootSound:
             thread = threading.Thread(target = lambda: None)
         thread.start()
         return thread
+    
+
+class ScootValuePersist:
+    """
+    Persists the most recent values for a scooter application to an INI file.
+    It maintains 'distance_pulses' as a floating-point number and 'timestamp', updating them through a method.
+    """
+
+    def __init__(self, filename: str = "config/recent-values.ini", write_interval_s: int = 60):
+        """
+        Initializes the ScootValuePersist object with the provided filename and write interval.
+
+        :param filename: The name of the file to which the most recent values of 'distance_pulses' and 'timestamp'
+                         will be persisted. Defaults to "config/recent-values.ini".
+        :param write_interval_s: The interval, in seconds, at which the most recent values are written to the file.
+                                 Defaults to 60 seconds.
+        """
+        self.filename = filename
+        self.config = ConfigParser()
+        self.distance_pulses = 0.0  # Initialize the distance_pulses attribute as a float
+        self.timestamp = 0.0  # Initialize the timestamp attribute
+        self.write_interval_s = write_interval_s
+        self._load_config()
+        self._init_timer()
+        atexit.register(self._write_config)
+
+    def _load_config(self):
+        """
+        Loads the most recent values from the file or initializes it with default values.
+        """
+        try:
+            if not os.path.exists(self.filename):
+                self.config['DEFAULT'] = {
+                    'distance_pulses': str(self.distance_pulses),
+                    'timestamp': str(self.timestamp)
+                }
+                self._write_config()
+            else:
+                self.config.read(self.filename)
+                self.distance_pulses = float(self.config['DEFAULT'].get('distance_pulses', 0.0))
+                self.timestamp = float(self.config['DEFAULT'].get('timestamp', 0.0))
+        except Exception as e:
+            sys.stderr.write(f"Error loading most recent values: {e}\n")
+
+    def _write_config(self):
+        """
+        Writes the most recent values of 'distance_pulses' and 'timestamp' to the INI file.
+        """
+        try:
+            self.config['DEFAULT']['distance_pulses'] = str(self.distance_pulses)
+            self.config['DEFAULT']['timestamp'] = str(self.timestamp)
+            with open(self.filename, 'w') as configfile:
+                self.config.write(configfile)
+        except Exception as e:
+            sys.stderr.write(f"Error writing most recent values: {e}\n")
+
+    def _init_timer(self):
+        """
+        Initializes the timer to periodically write the most recent values.
+        """
+        self.timer = threading.Timer(self.write_interval_s, self._write_config)
+        self.timer.daemon = True  # Make the timer thread a daemon thread
+        self.timer.start()
+
+    def set_distance(self, timestamp: float, distance: float, speed: float):
+        """
+        Sets the most recent value of 'distance_pulses' and updates the 'timestamp'. The 'speed' parameter is accepted
+        for API compatibility but is currently unused.
+
+        :param timestamp: The current timestamp as a float representing seconds since the epoch.
+        :param distance: The new most recent value to set for 'distance_pulses', representing the number of encoder pulses.
+        :param speed: The speed in pulses per second, which is currently unused.
+        """
+        self.distance_pulses = distance
+        self.timestamp = timestamp
+        # Note: Speed is not used, but it's accepted to fulfill the API requirement.
+
+    def get_distance(self) -> float:
+        """
+        Retrieves the stored most recent value of 'distance_pulses'.
+
+        :return: The current 'distance_pulses' value as a float.
+        """
+        return self.distance_pulses
+
+    def stop(self):
+        """
+        Stops the timer and writes the most recent values one last time before exiting.
+        """
+        self.timer.cancel()
+        self._write_config()
 
 
 # application entrypoint
@@ -559,6 +657,10 @@ if __name__ == '__main__':
         client_ip = request.remote_addr  # Gets the client's IP address
         print(f"WebSocket client connected from {client_ip}: /trajectory")
 
+    print("Reading persistent data.")
+    value_persist = ScootValuePersist()
+    print("... read last known position " + str(value_persist.get_distance()))
+
     print("Initializing pixels")
     pixels = ScootPixels(PIXEL_PIN, PIXEL_COUNT, pixels_enabled)
     pixels.tricolor()
@@ -569,13 +671,19 @@ if __name__ == '__main__':
     encoder = ScootEncoder(ENCODER_PIN,
                            ENCODER_SMOOTHING,
                            ENCODER_SPEED_ZERO_THRESHOLD_S,
+                           value_persist.get_distance(),
                            encoder_enabled)
+    # WebSocket emit on encoder pulses
     encoder.register_callback(lambda timestamp, position, speed, socketio = socketio : 
         socketio.emit('newdata', {
             'timestamp': math.ceil(timestamp * 1000),
-            'position': position,
-            'speed': speed },
+            'position': position / ENCODER_PULSES_PER_FOOT,
+            'speed': speed / ENCODER_PULSES_PER_FOOT},
         namespace='/trajectory')
+    )
+    # Update persistent data on encoder pulses
+    encoder.register_callback(lambda timestamp, position, speed, value_persist = value_persist:
+        value_persist.set_distance(timestamp, position, speed)
     )
     print("... encoder initialized")
 
@@ -592,6 +700,7 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print("Flask server terminated.")
     finally:
+        value_persist.stop()
         pixels.deinit()
         GPIO.cleanup()
 
