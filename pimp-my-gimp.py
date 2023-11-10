@@ -38,8 +38,11 @@ from flask import send_from_directory  # send raw file
 from flask import request
 from flask_socketio import SocketIO, emit
 
-# NeoPixel communication over GPIO 18 (pin 12)
-PIXEL_PIN = board.D18
+# argument parser
+import argparse
+
+# NeoPixel communication pin 
+PIXEL_PIN = board.D18  # GPIO 18 / pin 12
 # NeoPixel total number of NeoPixels in the array
 PIXEL_COUNT = 163
 # NeoPixel idle color
@@ -56,7 +59,6 @@ ENCODER_PULSES_PER_FOOT = float(ENCODER_PULSES_PER_REV) / (math.pi * (7.5/12.0))
 ENCODER_SPEED_ZERO_THRESHOLD_S = 0.5
 # Encoder speed smoothing coefficient (for exponential moving average)
 ENCODER_SMOOTHING = 0.6
-
 
 class ExponentialSmoothing:
     """
@@ -172,23 +174,28 @@ class ScootEncoder:
     def __init__(self,
                  encoder_pin: board.pin,
                  alpha: float = 0.5,
-                 zero_speed_threshold_s: float = 0.5):
+                 zero_speed_threshold_s: float = 0.5,
+                 enabled: bool = True):
         """
         Initialize the encoder with a pin, alpha value for trajectory smoothing, and zero speed threshold.
 
         :param encoder_pin: The GPIO pin number connected to the encoder.
         :param alpha: The alpha value used for trajectory smoothing. Defaults to 0.5.
         :param zero_speed_threshold_s: The time threshold in seconds to consider the scooter to be at zero speed. Defaults to 0.5.
+        :param enabled: Enable the hardware peripheral.
         """
         self._trajectory = Trajectory(alpha)
         self._zero_speed_threshold_s = zero_speed_threshold_s
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(encoder_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        GPIO.add_event_detect(encoder_pin, GPIO.RISING, callback = self.encoder_handler)
+        self.enabled = enabled
 
-        # Start a daemon thread to check the speed periodically and adjust the trajectory.
-        encoder_check_speed_thread = threading.Thread(target = self.encoder_check_speed, daemon = True)
-        encoder_check_speed_thread.start()
+        if self.enabled:
+            GPIO.setmode(GPIO.BCM)
+            GPIO.setup(encoder_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+            GPIO.add_event_detect(encoder_pin, GPIO.RISING, callback = self.encoder_handler)
+
+            # Start a daemon thread to check the speed periodically and adjust the trajectory.
+            encoder_check_speed_thread = threading.Thread(target = self.encoder_check_speed, daemon = True)
+            encoder_check_speed_thread.start()
 
     def encoder_handler(self, channel: int):
         """
@@ -232,26 +239,32 @@ class ScootPixels:
         _pixels: Instance of NeoPixel class to control the LEDs.
     """
 
-    def __init__(self, pin, pixel_count: int):
+    def __init__(self, pin, pixel_count: int, enabled: bool = True):
         """
         Initialize the ScootPixels with the specified pin and pixel count.
 
         :param pin: The pin where the NeoPixel LEDs are connected.
         :param pixel_count: The number of NeoPixel LEDs.
+        :param enabled: Enable hardware output.
         """
         self._pin = pin
         self._pixel_count = pixel_count
-        self._pixels = neopixel.NeoPixel(
-            pin = self._pin,
-            n = self._pixel_count,
-            auto_write = False
-        )
-        self.off()
+        self.enabled = enabled
+
+        if self.enabled:
+            self._pixels = neopixel.NeoPixel(
+                pin = self._pin,
+                n = self._pixel_count,
+                auto_write = False
+            )
+            self.off()
 
     def deinit(self):
         """
         Deinitialize the pixels and release the resources.
         """
+        if not self.enabled:
+            return
         self.off()
         self._pixels.deinit()
 
@@ -259,6 +272,8 @@ class ScootPixels:
         """
         Display a tricolor sequence on the LEDs, cycling through red, green, and blue.
         """
+        if not self.enabled:
+            return
         sequence = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
         for color in sequence:
             self.solid(color)
@@ -271,6 +286,8 @@ class ScootPixels:
 
         :param count: The number of times to repeat the cylon pattern.
         """
+        if not self.enabled:
+            return
         # Rotate the cylon pattern for the specified count
         for n in range(count):
             for color in [(1, 0, 0), (0, 1, 0), (0, 0, 1)]:
@@ -299,6 +316,8 @@ class ScootPixels:
         :param count: The number of strobe flashes.
         :param delay_s: The time delay in seconds between each flash.
         """
+        if not self.enabled:
+            return
         for n in range(count):
             for color in [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 255)]:
                 self.flash(color)
@@ -312,6 +331,8 @@ class ScootPixels:
         :param color: The color to flash.
         :param count: The number of times to flash the color.
         """
+        if not self.enabled:
+            return
         for n in range(count):
             self.off()  # Turn off before flashing
             time.sleep(0.150)
@@ -325,6 +346,8 @@ class ScootPixels:
 
         :param color: The color to display.
         """
+        if not self.enabled:
+            return
         self._pixels.fill(color)
         self._pixels.show()
 
@@ -332,6 +355,8 @@ class ScootPixels:
         """
         Turn off all LEDS.
         """
+        if not self.enabled:
+            return
         self.solid((0, 0, 0))
 
 
@@ -348,11 +373,14 @@ class ScootSound:
     Depencencies:
         threading
         pydub
+
+    :param enabled: bool: Enable audio output.
     """
-    def __init__(self):
+    def __init__(self, enabled: bool = True):
         """
         Initializes the ScootSound class with empty audio segments.
         """
+        self.enabled = enabled
         self.sound_meltdown = AudioSegment.empty()
         self.sound_disco = AudioSegment.empty()
         self.sound_underlight = AudioSegment.empty()
@@ -364,10 +392,11 @@ class ScootSound:
         Assumes the existence of MP3 files in the 'static/sounds/' directory.
         This method blocks while reading and parsing audio, which may be lengthy.
         """
-        self.sound_meltdown = AudioSegment.from_mp3("static/sounds/meltdown.mp3")
-        self.sound_disco = AudioSegment.from_mp3("static/sounds/disco.mp3")
-        self.sound_underlight = AudioSegment.from_mp3("static/sounds/underlight.mp3")
-        self.sound_lights_out = AudioSegment.from_mp3("static/sounds/lights-out.mp3")
+        if self.enabled:
+            self.sound_meltdown = AudioSegment.from_mp3("static/sounds/meltdown.mp3")
+            self.sound_disco = AudioSegment.from_mp3("static/sounds/disco.mp3")
+            self.sound_underlight = AudioSegment.from_mp3("static/sounds/underlight.mp3")
+            self.sound_lights_out = AudioSegment.from_mp3("static/sounds/lights-out.mp3")
 
     def play(self, segment: AudioSegment) -> threading.Thread:
         """
@@ -376,13 +405,48 @@ class ScootSound:
         :param segment (AudioSegment): The audio segment to be played.
         :return threading.Thread: The thread in which the audio segment is being played.
         """
-        thread = threading.Thread(target = lambda: play(segment), daemon = True)
+        thread = threading.Thread()
+        if self.enabled:
+            thread = threading.Thread(target = lambda: play(segment), daemon = True)
+        else:
+            thread = threading.Thread(target = lambda: None)
         thread.start()
         return thread
 
 
 # application entrypoint
 if __name__ == '__main__':
+    # parse arguments
+    parser = argparse.ArgumentParser(
+        prog='pimp-my-gimp.py',
+        description='Webserver and controller for enhanced mobility devices.',
+        epilog='May your journey be illuminated.')
+    parser.add_argument(
+        "--no-audio",
+        action="store_true",
+        help="disable audio output")
+    parser.add_argument(
+        "--no-speed",
+        action="store_true",
+        help="disable speed encoder")
+    parser.add_argument(
+        "--no-light",
+        action="store_true",
+        help="disable LED output")
+    args = parser.parse_args()
+    audio_enabled = True
+    if args.no_audio:
+        print("Audio output disabled")
+        audio_enabled = False
+    encoder_enabled = True
+    if args.no_speed:
+        encoder_enabled = False
+        print("Speedometer disabled")
+    pixels_enabled = True
+    if args.no_light:
+        pixels_enabled = False
+        print("Light disabled")
+
     # Initialize Flask app and SocketIO
     app = Flask(__name__)
     app.config['TEMPLATES_AUTO_RELOAD'] = True
@@ -496,13 +560,16 @@ if __name__ == '__main__':
         print(f"WebSocket client connected from {client_ip}: /trajectory")
 
     print("Initializing pixels")
-    pixels = ScootPixels(PIXEL_PIN, PIXEL_COUNT)
+    pixels = ScootPixels(PIXEL_PIN, PIXEL_COUNT, pixels_enabled)
     pixels.tricolor()
     pixels.solid(PIXEL_COLOR_IDLE)
     print("... pixels initialized")
 
     print("Initializing encoder")
-    encoder = ScootEncoder(ENCODER_PIN, ENCODER_SMOOTHING, ENCODER_SPEED_ZERO_THRESHOLD_S)
+    encoder = ScootEncoder(ENCODER_PIN,
+                           ENCODER_SMOOTHING,
+                           ENCODER_SPEED_ZERO_THRESHOLD_S,
+                           encoder_enabled)
     encoder.register_callback(lambda timestamp, position, speed, socketio = socketio : 
         socketio.emit('newdata', {
             'timestamp': math.ceil(timestamp * 1000),
@@ -513,7 +580,7 @@ if __name__ == '__main__':
     print("... encoder initialized")
 
     print("Initializing sounds")
-    sounds = ScootSound()
+    sounds = ScootSound(audio_enabled)
     sounds.import_from_disk()
     print("... sounds initialized")
     

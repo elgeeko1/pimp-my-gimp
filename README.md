@@ -12,8 +12,8 @@ Enhance your mobility experience with "Pimp My Gimp," a makeover for your mobili
 
 - Mobile-friendly web interface.
 - Customizable LED underlighting.
-- Integrated odometer and speedometer (optional).
-- Interactive sound effects (optional).
+- Integrated odometer and speedometer.
+- Interactive sound effects.
 - Completely battery-operated system.
 
 ## Getting Started
@@ -33,7 +33,7 @@ sudo usermod -aG docker ${USER}
 ```
 
 
-### Deployment
+### Running the Application
 
 Deploy the application with the following Docker command:
 
@@ -42,6 +42,11 @@ docker run --name pimp-my-gimp --privileged -p 80:80/tcp elgeeko/pimp-my-gimp
 ```
 
 Launch the web app in your browser by navigating to the IP address of your Raspberry Pi.
+
+All hardware components are optional. To disable a hardware component, add the appropriate flag to the end of the `docker run` command:
+- `--no-light`: disable the LED lights
+- `--no-speed`: disable the speedometer
+- `--no-audio`: disable audio output
 
 ## Parts
 
