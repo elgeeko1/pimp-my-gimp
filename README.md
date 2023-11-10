@@ -5,7 +5,7 @@
 
 Enhance your mobility experience with "Pimp My Gimp," a makeover for your mobility assistive device using a Raspberry Pi and Python. Features include battery-operated programmable LED underlighting, speakers, and a real-time speedometer.
 
-<img src="docs/web-app-screenshot.png" alt="Pimp my Gimp Application Screenshot" width="250"/> <img src="docs/animated-mobility-device.png" alt="Animated Mobility Device" width="250"/>
+<img src="docs/web-app-screenshot.png" alt="Pimp my Gimp Application Screenshot" width="250"/> <img src="docs/animated-mobility-device.png" alt="Animated Mobility Device" width="350"/>
 
 
 ## Features
@@ -41,6 +41,8 @@ Deploy the application with the following Docker command:
 docker run --name pimp-my-gimp --privileged -p 80:80/tcp elgeeko/pimp-my-gimp
 ```
 
+Launch the web app in your browser by navigating to the IP address of your Raspberry Pi.
+
 ## Parts
 
 ### Raspberry Pi
@@ -71,22 +73,22 @@ docker run --name pimp-my-gimp --privileged -p 80:80/tcp elgeeko/pimp-my-gimp
 
 ## Mount Hardware
 
-![Pimped Mobility Scooter](docs/scooter-system.jpg)
+<img alt="Pimped Mobility Scooter" src="docs/scooter-system.jpg" width="400px"></img><br/>
 _Pimped-out Mobility scooter system_
 
-![Electronics mounting](docs/scooter-under-seat-1.jpg)
+<img alt="Electronics mounting" src="docs/scooter-under-seat-1.jpg" width="400px"></img><br/>
 _Electronics mounting_
 
-![Underseat mouting and wiring](docs/scooter-under-seat-2.jpg)
+<img alt="Underseat mouting and wiring" src="docs/scooter-under-seat-2.jpg" width="400px"></img><br/>
 _Underseat mouting and wiring_
 
-![LED track lighting mounted to scooter](docs/scooter-lights.jpg)
+<img alt="LED track lighting mounted to scooter" src="docs/scooter-lights.jpg" width="400px"></img><br/>
 _LED track lighting mounted using double-sided tape_
 
-![Speedometer mounting](docs/scooter-speedometer-1.jpg)
+<img alt="Speedometer mounting" src="docs/scooter-speedometer-1.jpg" width="400px"></img><br/>
 _Speedometer mounting_
 
-![Speedometer mounting](docs/scooter-speedometer-2.jpg)
+<img alt="Speedometer sensor placement" src="docs/scooter-speedometer-2.jpg" width="400px"></img><br/>
 _Mounting of magnets on moving axle and Hall Effect sensor. Ensure the Hall Effect sensor is proximate to magnets as they pass by without contacting them._
 
 ## Wiring
