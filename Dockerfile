@@ -3,7 +3,7 @@
 ##################
 
 # Derive from an official Flask Docker image
-ARG BASEIMAGE=python:latest
+ARG BASEIMAGE=python:3.12
 FROM ${BASEIMAGE} AS BASE
 
 USER root
