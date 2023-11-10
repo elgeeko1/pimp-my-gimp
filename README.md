@@ -47,7 +47,7 @@ Launch the web app in your browser by navigating to the IP address of your Raspb
 
 All hardware components are optional. To disable a hardware component, add the appropriate flag to the end of the `docker run` command:
 - `--no-light`: disable the LED lights
-- `--no-speed`: disable the speedometer
+- `--no-odometer`: disable the odometer
 - `--no-audio`: disable audio output
 
 Configure your Raspberry Pi to connect to your phone's wifi hotspot for enhanced portability.
@@ -58,7 +58,7 @@ Create a docker volume to store trajectory information such as
 distance traveled across program restarts. This only needs to be
 executed once.
 ```shell
-docker volume create pimp-my-gimp
+docker volume create pimp-my-gimp-cache
 ```
 
 Run the application as before, modified with the persitant data
@@ -68,7 +68,7 @@ docker run \
     --name pimp-my-gimp \
     --privileged \
     -p 80:80/tcp \
-    --volume pimp-my-gimp:/app/config \
+    --volume pimp-my-gimp-cache:/app/cache \
     --restart unless-stopped \
     elgeeko/pimp-my-gimp
 ```
