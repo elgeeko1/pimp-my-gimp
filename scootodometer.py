@@ -79,8 +79,8 @@ class ScootOdometer:
             timestamp, _ = self._trajectory.speed()
             # Check if the current time exceeds the threshold since the last pulse.
             if time.time() - timestamp > self._zero_speed_threshold_s:
-                self._trajectory.step(0.0, -self._zero_speed_threshold_s)
-            time.sleep(self._zero_speed_threshold_s / 2)
+                self._trajectory.not_moving()
+            time.sleep(self._zero_speed_threshold_s)
 
     def register_callback(self, callback: Callable[[float, float, float], None]):
         """
@@ -109,8 +109,8 @@ class ScootOdometerCache:
         """
         self.filename = filename
         self.config = ConfigParser()
-        self.distance_pulses = 0.0  # Initialize the distance_pulses attribute as a float
-        self.timestamp = 0.0  # Initialize the timestamp attribute
+        self.distance_pulses = 0.0 
+        self.timestamp = 0.0 
         self.write_interval_s = write_interval_s
         self._cache_read()
         self._cache_write_timer_init()
@@ -201,14 +201,13 @@ class Trajectory:
         self._speed_filter = ExponentialSmoothing(alpha, 0.001)  # Exponential smoothing filter for speed
         self._step_callbacks = []
         
-    def step(self, step_pulses: float = 1.0, offset_s: float = 0.0):
+    def step(self, step_pulses: float = 1.0):
         """
         Updates the position and speed based on the step pulses received since the last update.
 
         :param step_pulses: The number of pulses since the last update, which is proportional to the distance moved.
-        :param offset_s: The time offset in seconds to be added to the current time, for timestamping the update.
         """
-        timestamp = time.time() + offset_s
+        timestamp = time.time()
         dt = timestamp - self._last_timestamp
         new_position = self._last_position + step_pulses
         new_speed = self._speed_filter.smooth(step_pulses / dt)
@@ -219,6 +218,15 @@ class Trajectory:
         # issue callbacks
         for callback in self._step_callbacks:
             callback(timestamp, new_position, new_speed)
+
+    def not_moving(self):
+        """
+        Update trajectory to indicate no movement. Use to produce timedstamped outputs even with no speed.
+        """
+        current_time = time.time()
+        # issue callbacks
+        for callback in self._step_callbacks:
+            callback(current_time, self._last_position, 0.0)
 
     def position(self) -> (float, float):
         """
