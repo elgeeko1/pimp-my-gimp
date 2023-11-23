@@ -22,22 +22,12 @@ _Click to see a video of an enhanced scooter_
 
 ### Prerequisites
 
-Install docker on your Raspberry Pi:
-```shell
-sudo apt update
-sudo apt install -y software-properties-common
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-sudo apt-add-repository "deb [arch=armhf] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-sudo apt update
-sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose
-sudo newgrp docker
-sudo usermod -aG docker ${USER}
-```
-
+- Raspberry Pi with docker installed. See [Install Docker on Raspberry Pi](https://www.simplilearn.com/tutorials/docker-tutorial/raspberry-pi-docker)
+- Additional hardare outlined below
 
 ### Running the Application
 
-Deploy the application with the following Docker command:
+Run the application with the following Docker command:
 
 ```shell
 docker run --name pimp-my-gimp --privileged -p 80:80/tcp elgeeko/pimp-my-gimp
