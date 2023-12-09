@@ -31,6 +31,11 @@
         "type": "image/png"
       },
       {
+        "src": "static/images/button-colorwheel.png",
+        "sizes": "48x48",
+        "type": "image/png"
+      },
+      {
         "src": "static/images/button-lights-out-alt.webp",
         "sizes": "48x48",
         "type": "image/webp"

@@ -1,4 +1,8 @@
-import neopixel
+import raspi_detect
+
+if raspi_detect.is_raspi:
+    import neopixel
+
 import time
 
 class ScootPixels:
@@ -12,7 +16,7 @@ class ScootPixels:
         _pixels: Instance of NeoPixel class to control the LEDs.
     """
 
-    def __init__(self, pin, pixel_count: int, enabled: bool = True):
+    def __init__(self, pin, pixel_count: int, enabled: bool = raspi_detect.is_raspi):
         """
         Initialize the ScootPixels with the specified pin and pixel count.
 
@@ -24,6 +28,8 @@ class ScootPixels:
         self._pixel_count = pixel_count
         self.enabled = enabled
 
+        if not raspi_detect.is_raspi:
+            self.enabled = False
         if self.enabled:
             self._pixels = neopixel.NeoPixel(
                 pin = self._pin,

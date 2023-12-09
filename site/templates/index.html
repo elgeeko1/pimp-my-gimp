@@ -17,10 +17,14 @@
     <!-- button actions -->
     <script type=text/javascript>
         // issue an HTTP GET request to send a command to the target
-        function pimpcommand(arg){
+        function pimpcommand(command, arg = null){
             var command_url = window.location.protocol + "//" + window.location.host + window.location.pathname;
             command_url = command_url.substring(0, command_url.lastIndexOf('/')) + "/";
-            command_url += arg;
+            command_url += command;
+            if(arg != null) {
+                command_url += "?" + arg;
+                console.log("pimp command:" + command_url);
+            }
             xhr = new XMLHttpRequest();
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === 4) {
@@ -55,8 +59,39 @@
             <button class="icon-button"><img src="static/images/button-underlight.png" alt="underlight" onclick="pimpcommand('underlight')"></button>
             <button class="icon-button"><img src="static/images/button-disco.png" alt="disco" onclick="pimpcommand('disco')"></button>
             <button class="icon-button"><img src="static/images/button-meltdown.png" alt="meltdown" onclick="pimpcommand('meltdown')"></button>
+            <button class="icon-button"><img src="static/images/button-colorwheel.png" alt="color wheel" onclick="openColorWheel()"></button>
             <button class="icon-button"><img src="static/images/button-lights-out-alt.webp" alt="lights out" onclick="pimpcommand('lights-out')"></button>
         </div>
+
+        <!-- color wheel popup -->
+        <div id="color-picker-popup" class="popup">
+            <div class="popup-content">
+                <span class="popup-close-btn" onclick="closeColorWheel()">&times;</span>
+                <div id="picker"></div>
+            </div>
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/@jaames/iro@5.5.1/dist/iro.min.js"></script>
+        <script type="text/javascript">
+            function openColorWheel() {
+                console.log("Opening color wheel");
+                document.getElementById("color-picker-popup").style.display = "block";
+            }
+            
+            function closeColorWheel() {
+                console.log("Closing color wheel");
+                document.getElementById("color-picker-popup").style.display = "none";
+            }
+            
+            var colorPicker = new iro.ColorPicker("#picker", {
+                width: 280,
+                color: "rgb(255, 0, 0)"
+            });
+            
+            colorPicker.on(["color:init", "color:change"], function(color){
+                console.log("Selected color:", color.hexString);
+                pimpcommand('color', "rgb=" + color.hexString.slice(1));
+            });
+        </script>
 
         <!-- distance -->
         <div class="metrics-display">

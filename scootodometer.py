@@ -8,8 +8,13 @@ import os
 from configparser import ConfigParser
 
 # IO libraries
-import RPi.GPIO as GPIO
-import board
+import raspi_detect
+if raspi_detect.is_raspi:
+    import RPi.GPIO as GPIO
+    import board
+else:
+    class board:
+        pin = int
 
 import math
 
@@ -28,7 +33,7 @@ class ScootOdometer:
                  alpha: float = 0.5,
                  zero_speed_threshold_s: float = 0.5,
                  initial_position: float = 0.0,
-                 enabled: bool = True):
+                 enabled: bool = raspi_detect.is_raspi):
         """
         Initialize the encoder with a pin, alpha value for trajectory smoothing, and zero speed threshold.
 
@@ -42,6 +47,9 @@ class ScootOdometer:
         self._zero_speed_threshold_s = zero_speed_threshold_s
         self.enabled = enabled
         self._encoder_check_speed_thread = threading.Thread(target = lambda: None)
+
+        if not raspi_detect.is_raspi:
+            self.enabled = False
 
         if self.enabled:
             GPIO.setmode(GPIO.BCM)

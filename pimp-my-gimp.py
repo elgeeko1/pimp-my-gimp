@@ -27,8 +27,16 @@ import scootsound
 # Odometer
 import scootodometer
 
+# Detect if running on a Raspberry Pi
+import raspi_detect
+
 # IO
-import board
+if raspi_detect.is_raspi:
+    import board
+else:
+    class board:
+        pin = int
+        D18: pin = 0
 
 # webserver libraries
 from flask import Flask, render_template
@@ -180,6 +188,38 @@ if __name__ == '__main__':
             thread.join()
         pixels.solid(PIXEL_COLOR_IDLE)
         print("... Endpoint '/meltdown' complete")
+        return ""
+    
+    @app.route("/color")
+    def color():
+        """
+        Handle the color route to set pixels to a user-specified color.
+        
+        :return: An empty string response after the effect.
+        """
+        print(f"Endpoint '/color': Accessed by {request.remote_addr}")
+        hex_color = request.args.get('rgb', default="#000000", type=str)
+        # Check if the hex color starts with '#', and remove it
+        if hex_color.startswith('#'):
+            hex_color = hex_color[1:]
+
+        # Check if the remaining string has a length of 6
+        if len(hex_color) != 6:
+            print("Error: Invalid hex color length. Must be 6 characters long.")
+            return
+        # Check if all characters are valid hexadecimal digits
+        if not all(c in '0123456789abcdefABCDEF' for c in hex_color):
+            print("Error: Invalid hex color. Contains non-hexadecimal characters.")
+
+        print("Color selected: " + hex_color)
+
+        # Convert the characters from hex to integers
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+        pixels.solid((r,g,b))
+
+        print("... Endpoint '/color' complete")
         return ""
 
     @app.route("/lights-out")

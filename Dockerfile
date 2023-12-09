@@ -69,7 +69,7 @@ RUN echo "${TZ}" > /etc/timezone \
 	&& dpkg-reconfigure -f noninteractive tzdata
 
 WORKDIR /app
-RUN mkdir /app/config
+RUN mkdir /app/cache
 
 # copy application files into the container
 COPY pimp-my-gimp.py /app/
