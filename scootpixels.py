@@ -68,16 +68,22 @@ class ScootPixels:
         """
         if not self.enabled:
             return
+
+        # alpha, brightnesss
+        brightness = 0.25
         start_time = time.time()
+        last_color = [(0.0, 0.0, 0.0)] * self._pixel_count
         while time.time() - start_time < duration_s:
             for pixel in range(self._pixel_count):
+                last_r, last_g, last_b = last_color[pixel]
                 # randomly choose colors within the range of fire colors
-                r = random.randint(150, 255)
-                g = random.randint(0, 140)
-                b = random.randint(0, 50)
+                r = int(min(255, max(0, last_r + random.randint(-255, 255))) * brightness)
+                g = int(min(96, max(0, last_g + random.randint(-6, 6))) * brightness)
+                b = int(min(48, max(0, last_b + random.randint(-4, 4))) * brightness)
                 self._pixels[pixel] = tuple([r, g, b])
+                last_color[pixel] = (r, g, b)
             self._pixels.show()
-            time.sleep(0.010)
+            time.sleep(0.125)
 
     def underlight(self, count: int = 1):
         """
@@ -106,6 +112,21 @@ class ScootPixels:
 
                 time.sleep(0.050)  # Give the CPU a break between colors
 
+        self.off()  # Turn off the lights after the pattern
+
+    def energyweapon(self):
+        """
+        Display an energy weapon pattern, with a chargeup and blast.
+        """
+        if not self.enabled:
+            return
+        count = 10
+        delay_s = 0.1
+        for n in range(count):
+            for color in [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 255)]:
+                self.flash(color)
+                if delay_s > 0:
+                    time.sleep(delay_s)
         self.off()  # Turn off the lights after the pattern
 
     def disco(self, count: int = 10, delay_s: float = 0.1):

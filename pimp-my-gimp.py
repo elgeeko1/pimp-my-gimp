@@ -158,6 +158,21 @@ if __name__ == '__main__':
         print("... Endpoint '/disco' complete")
         return ""
 
+    @app.route("/fireplace")
+    def fireplace():
+        """
+        Handle the fireplace effect route.
+        
+        :return: An empty string response after the effect.
+        """
+        print(f"Endpoint '/fireplace': Accessed by {request.remote_addr}")
+        thread = sounds.play(sounds.sound_fireplace)
+        pixels.fireplace()
+        thread.join()
+        pixels.solid(PIXEL_COLOR_IDLE)
+        print("... Endpoint '/fireplace' complete")
+        return ""
+
     @app.route("/underlight")
     def underlight():
         """
@@ -173,19 +188,19 @@ if __name__ == '__main__':
         print("... Endpoint '/underlight' complete")
         return ""
 
-    @app.route("/fireplace")
-    def fireplace():
+    @app.route("/energyweapon")
+    def energyweapon():
         """
-        Handle the fireplace effect route.
+        Handle the energyweaspon effect route.
         
         :return: An empty string response after the effect.
         """
-        print(f"Endpoint '/fireplace': Accessed by {request.remote_addr}")
-        thread = sounds.play(sounds.sound_underlight)
-        pixels.fireplace()
+        print(f"Endpoint '/energyweapon': Accessed by {request.remote_addr}")
+        thread = sounds.play(sounds.sound_energyweapon)
+        pixels.energyweapon()
         thread.join()
         pixels.solid(PIXEL_COLOR_IDLE)
-        print("... Endpoint '/fireplace' complete")
+        print("... Endpoint '/energyweapon' complete")
         return ""
 
     @app.route("/meltdown")

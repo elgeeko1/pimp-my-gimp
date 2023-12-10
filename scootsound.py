@@ -14,6 +14,7 @@ class ScootSound:
         sound_meltdown (AudioSegment): An audio segment for the 'meltdown' mode.
         sound_disco (AudioSegment): An audio segment for the 'disco' mode.
         sound_underlight (AudioSegment): An audio segment for the 'underlight' mode.
+        sound_fireplace (AudioSegment): An audio segment for the 'fireplace' mode.
         sound_lights_out (AudioSegment): An audio segment for the 'lights out' mode.
 
     Depencencies:
@@ -30,6 +31,7 @@ class ScootSound:
         self.sound_meltdown = AudioSegment.empty()
         self.sound_disco = AudioSegment.empty()
         self.sound_underlight = AudioSegment.empty()
+        self.sound_fireplace = AudioSegment.empty()
         self.sound_lights_out = AudioSegment.empty()
 
     def import_from_disk(self):
@@ -42,6 +44,8 @@ class ScootSound:
             self.sound_meltdown = AudioSegment.from_mp3("static/sounds/meltdown.mp3")
             self.sound_disco = AudioSegment.from_mp3("static/sounds/disco.mp3")
             self.sound_underlight = AudioSegment.from_mp3("static/sounds/underlight.mp3")
+            self.sound_fireplace = AudioSegment.from_mp3("static/sounds/fireplace.mp3")
+            self.sound_energyweapon = AudioSegment.from_mp3("static/sounds/energyweapon.mp3")
             self.sound_lights_out = AudioSegment.from_mp3("static/sounds/lights-out.mp3")
 
     def play(self, segment: AudioSegment) -> threading.Thread:
