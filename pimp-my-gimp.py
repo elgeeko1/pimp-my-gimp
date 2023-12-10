@@ -173,6 +173,21 @@ if __name__ == '__main__':
         print("... Endpoint '/underlight' complete")
         return ""
 
+    @app.route("/fireplace")
+    def fireplace():
+        """
+        Handle the fireplace effect route.
+        
+        :return: An empty string response after the effect.
+        """
+        print(f"Endpoint '/fireplace': Accessed by {request.remote_addr}")
+        thread = sounds.play(sounds.sound_underlight)
+        pixels.fireplace()
+        thread.join()
+        pixels.solid(PIXEL_COLOR_IDLE)
+        print("... Endpoint '/fireplace' complete")
+        return ""
+
     @app.route("/meltdown")
     def meltdown():
         """
@@ -198,7 +213,8 @@ if __name__ == '__main__':
         :return: An empty string response after the effect.
         """
         print(f"Endpoint '/color': Accessed by {request.remote_addr}")
-        hex_color = request.args.get('rgb', default="#000000", type=str)
+        idle_color = "#{:02x}{:02x}{:02x}".format(*PIXEL_COLOR_IDLE)
+        hex_color = request.args.get('rgb', default=idle_color, type=str)
         # Check if the hex color starts with '#', and remove it
         if hex_color.startswith('#'):
             hex_color = hex_color[1:]

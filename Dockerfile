@@ -70,12 +70,14 @@ RUN echo "${TZ}" > /etc/timezone \
 
 WORKDIR /app
 RUN mkdir /app/cache
+RUN touch /app/cache/odometer.ini
 
 # copy application files into the container
 COPY pimp-my-gimp.py /app/
 COPY scootodometer.py /app/
 COPY scootpixels.py /app/
 COPY scootsound.py /app/
+COPY raspi_detect.py /app/
 COPY site /app/
 RUN chmod +x /app/pimp-my-gimp.py
 

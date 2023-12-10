@@ -119,6 +119,8 @@ footer {
 
 .popup {
     display: none;
+    align-items: center;
+    justify-content: center;
     position: fixed;
     z-index: 1;
     left: 0;
@@ -126,30 +128,27 @@ footer {
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgb(0,0,0,0.4);
 }
 
-.popup-content {
-    background-color: #fefefe;
-    margin: 15% auto;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 300px;
-    position: relative;
-}
-
-.popup-close-btn {
-    color: #aaa;
-    float: right;
+.popup-close-button {
+    position: absolute;
+    z-index: 10;
+    top: 5px;
+    right: 5px;
+    cursor: pointer;
+    background-color: transparent;
+    border: 0px;
     font-size: 28px;
     font-weight: bold;
 }
 
-.popup-close-btn:hover,
-.popup-close-btn:focus {
-    color: black;
-    text-decoration: none;
-    cursor: pointer;
+.colorwheel {
+    background-color: #888;
+    margin: 1% auto;
+    padding: 5px;
+    border: 2px solid #AAA;
+    width: 215px;
+    position: relative;
 }
 
 /* Responsive design for mobile devices */

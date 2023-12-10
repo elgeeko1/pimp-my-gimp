@@ -57,40 +57,49 @@
         <!-- buttons -->
         <div class="icon-container">
             <button class="icon-button"><img src="static/images/button-underlight.png" alt="underlight" onclick="pimpcommand('underlight')"></button>
+            <button class="icon-button"><img src="static/images/button-fireplace.png" alt="fireplace" onclick="pimpcommand('fireplace')"></button>
             <button class="icon-button"><img src="static/images/button-disco.png" alt="disco" onclick="pimpcommand('disco')"></button>
             <button class="icon-button"><img src="static/images/button-meltdown.png" alt="meltdown" onclick="pimpcommand('meltdown')"></button>
-            <button class="icon-button"><img src="static/images/button-colorwheel.png" alt="color wheel" onclick="openColorWheel()"></button>
+            <button class="icon-button" id="colorwheel-open-button"><img src="static/images/button-colorwheel.png" alt="color wheel"></button>
+            <button class="icon-button"><img src="static/images/button-homecolor.png" alt="underlight" onclick="pimpcommand('color')"></button>
             <button class="icon-button"><img src="static/images/button-lights-out-alt.webp" alt="lights out" onclick="pimpcommand('lights-out')"></button>
         </div>
 
-        <!-- color wheel popup -->
-        <div id="color-picker-popup" class="popup">
-            <div class="popup-content">
-                <span class="popup-close-btn" onclick="closeColorWheel()">&times;</span>
-                <div id="picker"></div>
+        <div id="colorwheel-popup" class="popup">
+            <div class="colorwheel">
+                <button class="popup-close-button" id="colorwheel-close-button"><img src="static/images/close-icon.png" alt="close" height="25px" width="25px"></button>
+                <div id="colorwheel"></div>
             </div>
         </div>
         <script src="https://cdn.jsdelivr.net/npm/@jaames/iro@5.5.1/dist/iro.min.js"></script>
         <script type="text/javascript">
-            function openColorWheel() {
-                console.log("Opening color wheel");
-                document.getElementById("color-picker-popup").style.display = "block";
-            }
-            
-            function closeColorWheel() {
-                console.log("Closing color wheel");
-                document.getElementById("color-picker-popup").style.display = "none";
-            }
-            
-            var colorPicker = new iro.ColorPicker("#picker", {
-                width: 280,
+            // colorwheel object
+            let colorwheelTimeout; // close colorwheel if not used
+            var colorwheel = new iro.ColorPicker("#colorwheel", {
+                width: 200,
                 color: "rgb(255, 0, 0)"
             });
-            
-            colorPicker.on(["color:init", "color:change"], function(color){
+            colorwheel.on(["color:change"], function(color){
                 console.log("Selected color:", color.hexString);
                 pimpcommand('color', "rgb=" + color.hexString.slice(1));
+                colorwheelStayalive();
             });
+
+            function colorwheelOpen(){
+                document.getElementById('colorwheel-popup').style.display = 'flex';
+                colorwheelTimeout = setTimeout(colorwheelClose, 5000);
+            }
+            function colorwheelClose(){
+                document.getElementById('colorwheel-popup').style.display = 'none';
+                clearTimeout(colorwheelTimeout);
+            }
+            function colorwheelStayalive(){
+                clearTimeout(colorwheelTimeout);
+                colorwheelTimeout = setTimeout(colorwheelClose, 2000);
+            }
+
+            document.getElementById('colorwheel-open-button').addEventListener('click', colorwheelOpen);
+            document.getElementById('colorwheel-close-button').addEventListener('click', colorwheelClose);
         </script>
 
         <!-- distance -->
@@ -101,7 +110,7 @@
 
         <!-- speed graph -->
         <footer>
-            <div style="height: 200px; width: 100%;">
+            <div style="height: 100px; width: 100%;">
                 <canvas id="speedChart" width="90%"></canvas>
             </div>
         </footer>

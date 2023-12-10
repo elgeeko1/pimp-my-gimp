@@ -4,6 +4,7 @@ if raspi_detect.is_raspi:
     import neopixel
 
 import time
+import random
 
 class ScootPixels:
     """
@@ -58,6 +59,25 @@ class ScootPixels:
             self.solid(color)
             time.sleep(0.250)
         self.off()  # Turn off the lights after the sequence
+
+    def fireplace(self, duration_s = 5.0):
+        """
+        Show a fireplace.
+
+        :param duration: The duration of the fireplace effect.
+        """
+        if not self.enabled:
+            return
+        start_time = time.time()
+        while time.time() - start_time < duration_s:
+            for pixel in range(self._pixel_count):
+                # randomly choose colors within the range of fire colors
+                r = random.randint(150, 255)
+                g = random.randint(0, 140)
+                b = random.randint(0, 50)
+                self._pixels[pixel] = tuple([r, g, b])
+            self._pixels.show()
+            time.sleep(0.010)
 
     def underlight(self, count: int = 1):
         """
