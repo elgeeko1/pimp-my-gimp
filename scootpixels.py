@@ -120,13 +120,40 @@ class ScootPixels:
         """
         if not self.enabled:
             return
-        count = 10
-        delay_s = 0.1
-        for n in range(count):
-            for color in [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 255)]:
-                self.flash(color)
-                if delay_s > 0:
-                    time.sleep(delay_s)
+        
+        self.off()
+        
+        # Fill green one LED at a time
+        for pixel in range(self._pixel_count):
+            self._pixels[pixel] = (0, 255, 0)
+            self._pixels.show()
+            time.sleep(2.5 / self._pixel_count)  # two second duration
+
+        # Fade to white
+        num_steps = 10
+        for step in range(num_steps):
+            color = (step * 255 // num_steps, 255, step * 255 // num_steps)
+            for pixel in range(self._pixel_count):
+                self._pixels[pixel] = color
+            self._pixels.show()
+            time.sleep(0.75 / num_steps)
+
+        # Change to red, two at a time
+        for pixel in range(0, self._pixel_count, 2):
+            self._pixels[pixel] = (255, 0, 0)  # Red color
+            if pixel + 1 < self._pixel_count:
+                self._pixels[pixel + 1] = (255, 0, 0)
+            self._pixels.show()
+
+        # Fade to black
+        num_steps = 100
+        for step in range(num_steps, -1, -1):
+            color = (step * 255 // num_steps, 0, 0)
+            for pixel in range(self._pixel_count):
+                self._pixels[pixel] = color
+            self._pixels.show()
+            time.sleep(2.0 / num_steps)
+                
         self.off()  # Turn off the lights after the pattern
 
     def disco(self, count: int = 10, delay_s: float = 0.1):

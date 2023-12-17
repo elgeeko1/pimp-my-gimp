@@ -83,12 +83,12 @@ Any mobility device may be adapted to use these modifications. The device used h
 - LED Strip Light: [Adafruit NeoPixel 332 LED-per-Meter Silicone Bead LED Strip](https://www.adafruit.com/product/4865)
 - Connector: [3-pin JST SM Plug](https://www.adafruit.com/product/1663)
 
-### Speed Measurement (optional)
+### Speed Measurement
 
-- Magnet: [Neodymium magnet 0.125" cube](https://www.sparkfun.com/products/8644) x 4
+- Magnet: [Neodymium magnet 0.125" cube](https://www.sparkfun.com/products/8644) x 8
 - Sensor: [AN1815 Hall Effect Sensor](https://www.sparkfun.com/products/14709)
 
-### Audio Output (optional)
+### Audio Output
 
 - DAC: [Cubilux USB to 3.5mm Audio Adapter](https://a.co/d/5YjWS0N)
 - Amplifier: [SparkFun Qwiic Speaker Amp](https://www.sparkfun.com/products/20690)
@@ -114,7 +114,7 @@ _LED track lighting mounted using double-sided tape_
 _Speedometer mounting_
 
 <img alt="Speedometer sensor placement" src="docs/scooter-speedometer-2.jpg" width="400px"></img><br/>
-_Mounting of magnets on moving axle and Hall Effect sensor. Ensure the Hall Effect sensor is proximate to magnets as they pass by without contacting them._
+_Mounting of magnets on moving axle and Hall Effect sensor. Ensure the Hall Effect sensor is proximate to magnets as they pass by without contacting them. Try to space them out equally._
 
 ## Wiring
 

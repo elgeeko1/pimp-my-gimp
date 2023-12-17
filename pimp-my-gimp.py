@@ -57,7 +57,7 @@ PIXEL_COLOR_IDLE = (0, 0, 64)
 # Encoder GPIO pin
 ENCODER_PIN = 12  # GPIO 12 / pin 32
 # Encoder counts per revolution of the wheel
-ENCODER_PULSES_PER_REV = 4
+ENCODER_PULSES_PER_REV = 8
 # Encoder pulses per linear foot
 # wheel diameter is 7.5", so circumference is pi * 7.5
 ENCODER_PULSES_PER_FOOT = float(ENCODER_PULSES_PER_REV) / (math.pi * (7.5/12.0))
