@@ -30,16 +30,16 @@ class ScootOdometer:
 
     def __init__(self,
                  encoder_pin: board.pin,
-                 alpha: float = 0.5,
-                 zero_speed_threshold_s: float = 0.5,
+                 alpha: float = 0.75,
+                 zero_speed_threshold_s: float = 0.75,
                  initial_position: float = 0.0,
                  enabled: bool = raspi_detect.is_raspi):
         """
         Initialize the encoder with a pin, alpha value for trajectory smoothing, and zero speed threshold.
 
         :param encoder_pin: The GPIO pin number connected to the encoder.
-        :param alpha: The alpha value used for trajectory smoothing. Defaults to 0.5.
-        :param zero_speed_threshold_s: The time threshold in seconds to consider the scooter to be at zero speed. Defaults to 0.5.
+        :param alpha: The alpha value used for trajectory smoothing. Defaults to 0.75.
+        :param zero_speed_threshold_s: The time threshold in seconds to consider the scooter to be at zero speed. Defaults to 0.75.
         :param initial_position: The initial position of the encoder, in pulses.
         :param enabled: Enable the hardware peripheral.
         """
@@ -80,15 +80,13 @@ class ScootOdometer:
     def encoder_check_speed(self):
         """
         Execute periodically to determine if the speed is zero and add zero points to the trajectory.
-        Introduces a latency of half the zero_speed_threshold_s to account for encoder pulses that may arrive
-        soon after the execution of this method, preventing artificially inflated speeds.
         """
         while self.enabled:
             timestamp, _ = self._trajectory.speed()
             # Check if the current time exceeds the threshold since the last pulse.
             if time.time() - timestamp > self._zero_speed_threshold_s:
                 self._trajectory.not_moving()
-            time.sleep(self._zero_speed_threshold_s)
+            time.sleep(self._zero_speed_threshold_s / 2)
 
     def register_callback(self, callback: Callable[[float, float, float], None]):
         """
@@ -196,7 +194,7 @@ class Trajectory:
     Exponential smoothing is applied to speed data to reduce noise and variability in the measurements.
     """
 
-    def __init__(self, alpha: float = 0.5, initial_position = 0.0):
+    def __init__(self, alpha: float = 0.75, initial_position = 0.0):
         """
         Initializes the Trajectory with a specified window size for the buffers and a smoothing factor for speed calculation.
 
@@ -265,7 +263,7 @@ class ExponentialSmoothing:
     """
     Exponential smoothing algorithm for time series data.
     """
-    def __init__(self, alpha: float = 0.5, zero_tolerance = -math.inf):
+    def __init__(self, alpha: float = 0.75, zero_tolerance = -math.inf):
         """
         Initializes the exponential smoothing filter.
 

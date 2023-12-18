@@ -62,9 +62,9 @@ ENCODER_PULSES_PER_REV = 8
 # wheel diameter is 7.5", so circumference is pi * 7.5
 ENCODER_PULSES_PER_FOOT = float(ENCODER_PULSES_PER_REV) / (math.pi * (7.5/12.0))
 # Time since last encoder pulse after which the speed is assumed to be zero
-ENCODER_SPEED_ZERO_THRESHOLD_S = 0.5
+ENCODER_SPEED_ZERO_THRESHOLD_S = 1
 # Encoder speed smoothing coefficient (for exponential moving average)
-ENCODER_SMOOTHING = 0.6
+ENCODER_SMOOTHING = 0.75
 
 # Program cache directory for persistent data
 CACHE_DIR = "cache/"
@@ -304,7 +304,8 @@ if __name__ == '__main__':
     )
     # Update persistent data on encoder pulses
     odometer.register_callback(lambda timestamp, position, speed, odometer_cache = odometer_cache:
-        odometer_cache.set_distance(timestamp, position, speed)
+        # Write cache every 100 pulses
+        (position - odometer_cache.get_distance() > 100) and odometer_cache.set_distance(timestamp, position, speed) 
     )
     print("... odometer initialized")
 
