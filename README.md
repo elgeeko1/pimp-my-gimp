@@ -7,7 +7,7 @@ Enhance your mobility experience with "Pimp My Gimp," a makeover for your mobili
 
 <img src="docs/web-app-screenshot.png" alt="Pimp my Gimp Application Screenshot" width="250"/>
 
-[![video demonstration](https://img.youtube.com/vi/8swAAmyXXOw/0.jpg)](https://www.youtube.com/watch?v=8swAAmyXXOw)<br/>
+[![video demonstration](https://img.youtube.com/vi/zSad3J9h5kk/0.jpg)](https://youtu.be/zSad3J9h5kk)<br/>
 _Click to see a video of an enhanced scooter_
 
 ## Features
