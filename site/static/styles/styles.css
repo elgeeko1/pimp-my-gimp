@@ -117,6 +117,40 @@ footer {
     box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
 }
 
+.popup {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+}
+
+.popup-close-button {
+    position: absolute;
+    z-index: 10;
+    top: 5px;
+    right: 5px;
+    cursor: pointer;
+    background-color: transparent;
+    border: 0px;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.colorwheel {
+    background-color: #888;
+    margin: 1% auto;
+    padding: 5px;
+    border: 2px solid #AAA;
+    width: 215px;
+    position: relative;
+}
+
 /* Responsive design for mobile devices */
 @media only screen and (max-width: 768px) {
     .icon-container {

@@ -27,8 +27,16 @@ import scootsound
 # Odometer
 import scootodometer
 
+# Detect if running on a Raspberry Pi
+import raspi_detect
+
 # IO
-import board
+if raspi_detect.is_raspi:
+    import board
+else:
+    class board:
+        pin = int
+        D18: pin = 0
 
 # webserver libraries
 from flask import Flask, render_template
@@ -49,14 +57,14 @@ PIXEL_COLOR_IDLE = (0, 0, 64)
 # Encoder GPIO pin
 ENCODER_PIN = 12  # GPIO 12 / pin 32
 # Encoder counts per revolution of the wheel
-ENCODER_PULSES_PER_REV = 4
+ENCODER_PULSES_PER_REV = 8
 # Encoder pulses per linear foot
 # wheel diameter is 7.5", so circumference is pi * 7.5
 ENCODER_PULSES_PER_FOOT = float(ENCODER_PULSES_PER_REV) / (math.pi * (7.5/12.0))
 # Time since last encoder pulse after which the speed is assumed to be zero
-ENCODER_SPEED_ZERO_THRESHOLD_S = 0.5
+ENCODER_SPEED_ZERO_THRESHOLD_S = 1
 # Encoder speed smoothing coefficient (for exponential moving average)
-ENCODER_SMOOTHING = 0.6
+ENCODER_SMOOTHING = 0.75
 
 # Program cache directory for persistent data
 CACHE_DIR = "cache/"
@@ -150,6 +158,21 @@ if __name__ == '__main__':
         print("... Endpoint '/disco' complete")
         return ""
 
+    @app.route("/fireplace")
+    def fireplace():
+        """
+        Handle the fireplace effect route.
+        
+        :return: An empty string response after the effect.
+        """
+        print(f"Endpoint '/fireplace': Accessed by {request.remote_addr}")
+        thread = sounds.play(sounds.sound_fireplace)
+        pixels.fireplace()
+        thread.join()
+        pixels.solid(PIXEL_COLOR_IDLE)
+        print("... Endpoint '/fireplace' complete")
+        return ""
+
     @app.route("/underlight")
     def underlight():
         """
@@ -163,6 +186,21 @@ if __name__ == '__main__':
         thread.join()
         pixels.solid(PIXEL_COLOR_IDLE)
         print("... Endpoint '/underlight' complete")
+        return ""
+
+    @app.route("/energyweapon")
+    def energyweapon():
+        """
+        Handle the energyweaspon effect route.
+        
+        :return: An empty string response after the effect.
+        """
+        print(f"Endpoint '/energyweapon': Accessed by {request.remote_addr}")
+        thread = sounds.play(sounds.sound_energyweapon)
+        pixels.energyweapon()
+        thread.join()
+        pixels.solid(PIXEL_COLOR_IDLE)
+        print("... Endpoint '/energyweapon' complete")
         return ""
 
     @app.route("/meltdown")
@@ -180,6 +218,39 @@ if __name__ == '__main__':
             thread.join()
         pixels.solid(PIXEL_COLOR_IDLE)
         print("... Endpoint '/meltdown' complete")
+        return ""
+    
+    @app.route("/color")
+    def color():
+        """
+        Handle the color route to set pixels to a user-specified color.
+        
+        :return: An empty string response after the effect.
+        """
+        print(f"Endpoint '/color': Accessed by {request.remote_addr}")
+        idle_color = "#{:02x}{:02x}{:02x}".format(*PIXEL_COLOR_IDLE)
+        hex_color = request.args.get('rgb', default=idle_color, type=str)
+        # Check if the hex color starts with '#', and remove it
+        if hex_color.startswith('#'):
+            hex_color = hex_color[1:]
+
+        # Check if the remaining string has a length of 6
+        if len(hex_color) != 6:
+            print("Error: Invalid hex color length. Must be 6 characters long.")
+            return
+        # Check if all characters are valid hexadecimal digits
+        if not all(c in '0123456789abcdefABCDEF' for c in hex_color):
+            print("Error: Invalid hex color. Contains non-hexadecimal characters.")
+
+        print("Color selected: " + hex_color)
+
+        # Convert the characters from hex to integers
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+        pixels.solid((r,g,b))
+
+        print("... Endpoint '/color' complete")
         return ""
 
     @app.route("/lights-out")
@@ -233,7 +304,8 @@ if __name__ == '__main__':
     )
     # Update persistent data on encoder pulses
     odometer.register_callback(lambda timestamp, position, speed, odometer_cache = odometer_cache:
-        odometer_cache.set_distance(timestamp, position, speed)
+        # Write cache every 100 pulses
+        (position - odometer_cache.get_distance() > 100) and odometer_cache.set_distance(timestamp, position, speed) 
     )
     print("... odometer initialized")
 

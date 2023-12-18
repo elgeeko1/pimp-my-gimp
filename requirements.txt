@@ -1,9 +1,9 @@
-RPi.GPIO==0.7.1
-rpi-ws281x==5.0.0  # WS281 LEDs
-adafruit-blinka==8.24.0
-adafruit-circuitpython-neopixel==6.3.10
 gevent==23.9.1
 gevent-websocket==0.10.1
 flask==3.0.0
 flask-socketio==5.3.6
 pydub==0.25.1
+adafruit-blinka==8.24.0
+adafruit-circuitpython-neopixel==6.3.10
+RPi.GPIO==0.7.1
+rpi-ws281x==5.0.0  # WS281 LEDs

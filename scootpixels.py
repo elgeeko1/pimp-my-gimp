@@ -1,5 +1,10 @@
-import neopixel
+import raspi_detect
+
+if raspi_detect.is_raspi:
+    import neopixel
+
 import time
+import random
 
 class ScootPixels:
     """
@@ -12,7 +17,7 @@ class ScootPixels:
         _pixels: Instance of NeoPixel class to control the LEDs.
     """
 
-    def __init__(self, pin, pixel_count: int, enabled: bool = True):
+    def __init__(self, pin, pixel_count: int, enabled: bool = raspi_detect.is_raspi):
         """
         Initialize the ScootPixels with the specified pin and pixel count.
 
@@ -24,6 +29,8 @@ class ScootPixels:
         self._pixel_count = pixel_count
         self.enabled = enabled
 
+        if not raspi_detect.is_raspi:
+            self.enabled = False
         if self.enabled:
             self._pixels = neopixel.NeoPixel(
                 pin = self._pin,
@@ -53,6 +60,31 @@ class ScootPixels:
             time.sleep(0.250)
         self.off()  # Turn off the lights after the sequence
 
+    def fireplace(self, duration_s = 5.0):
+        """
+        Show a fireplace.
+
+        :param duration: The duration of the fireplace effect.
+        """
+        if not self.enabled:
+            return
+
+        # alpha, brightnesss
+        brightness = 0.25
+        start_time = time.time()
+        last_color = [(0.0, 0.0, 0.0)] * self._pixel_count
+        while time.time() - start_time < duration_s:
+            for pixel in range(self._pixel_count):
+                last_r, last_g, last_b = last_color[pixel]
+                # randomly choose colors within the range of fire colors
+                r = int(min(255, max(0, last_r + random.randint(-255, 255))) * brightness)
+                g = int(min(96, max(0, last_g + random.randint(-6, 6))) * brightness)
+                b = int(min(48, max(0, last_b + random.randint(-4, 4))) * brightness)
+                self._pixels[pixel] = tuple([r, g, b])
+                last_color[pixel] = (r, g, b)
+            self._pixels.show()
+            time.sleep(0.125)
+
     def underlight(self, count: int = 1):
         """
         Display a 'cylon' pattern underneath the scooter, moving back and forth.
@@ -80,6 +112,48 @@ class ScootPixels:
 
                 time.sleep(0.050)  # Give the CPU a break between colors
 
+        self.off()  # Turn off the lights after the pattern
+
+    def energyweapon(self):
+        """
+        Display an energy weapon pattern, with a chargeup and blast.
+        """
+        if not self.enabled:
+            return
+        
+        self.off()
+        
+        # Fill green one LED at a time
+        for pixel in range(self._pixel_count):
+            self._pixels[pixel] = (0, 255, 0)
+            self._pixels.show()
+            time.sleep(2.5 / self._pixel_count)  # two second duration
+
+        # Fade to white
+        num_steps = 10
+        for step in range(num_steps):
+            color = (step * 255 // num_steps, 255, step * 255 // num_steps)
+            for pixel in range(self._pixel_count):
+                self._pixels[pixel] = color
+            self._pixels.show()
+            time.sleep(0.75 / num_steps)
+
+        # Change to red, two at a time
+        for pixel in range(0, self._pixel_count, 2):
+            self._pixels[pixel] = (255, 0, 0)  # Red color
+            if pixel + 1 < self._pixel_count:
+                self._pixels[pixel + 1] = (255, 0, 0)
+            self._pixels.show()
+
+        # Fade to black
+        num_steps = 100
+        for step in range(num_steps, -1, -1):
+            color = (step * 255 // num_steps, 0, 0)
+            for pixel in range(self._pixel_count):
+                self._pixels[pixel] = color
+            self._pixels.show()
+            time.sleep(2.0 / num_steps)
+                
         self.off()  # Turn off the lights after the pattern
 
     def disco(self, count: int = 10, delay_s: float = 0.1):
