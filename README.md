@@ -64,6 +64,15 @@ docker run \
     elgeeko/pimp-my-gimp
 ```
 
+## Configuring Audio Output
+
+If you are using the built-in audio output, it should work by default. However the audio output jack is blocked when installed according to the instructions here, so a separate USB DAC is used instead. To set this as the default output, make the following two modifications in `/etc/asound.conf`
+
+```
+defaults.pcm.card 1
+defaults.ctl.card 1
+```
+
 ## Parts
 
 ### Mobility Device
